@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git clone *)",
+      "Bash(gh pr *)",
+      "Bash(gh repo *)",
+      "WebFetch(domain:github.com)",
+      "Bash(gh api *)"
+    ]
+  }
+}
