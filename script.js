@@ -82,7 +82,7 @@ const PROJECTS = [
     tags: ['Mobile Web', '사이드 프로젝트'],
     period: '2022/10/01 → 2023/01/30',
     desc: '프로젝트 상세 설명을 여기에 입력하세요.',
-    images: ['images/uiux/luckyslot/01.jpg'],
+    images: ['images/uiux/luckyslot/cover.jpg'],
   },
 
   // ===== AI Video (임시 — 실제 내용으로 교체 예정) =====
@@ -126,6 +126,14 @@ const PROJECTS = [
   },
 ];
 
+// 빌드 시 노션에서 가져온 제목/태그/기간으로 덮어쓰기 (데이터/이미지는 그대로 유지)
+if (typeof NOTION_OVERRIDES !== 'undefined') {
+  PROJECTS.forEach(p => {
+    const o = NOTION_OVERRIDES[p.id];
+    if (o) Object.assign(p, o);
+  });
+}
+
 const CATEGORY_LABEL = { uiux: 'UI/UX', aivideo: 'AI Video', branding: 'Branding' };
 
 const TAG_CLASS = {
@@ -139,7 +147,6 @@ const TAG_CLASS = {
 };
 
 // ===== 헬퍼 =====
-// 기간("시작 → 종료")의 종료일 기준으로 최신순 정렬. 기간 없으면 뒤로.
 function endDate(p) {
   const end = (p.period || '').split('→').pop().trim();
   return end ? end.replace(/\//g, '') : '0';
@@ -151,15 +158,7 @@ function projectsOf(category) {
     .sort((a, b) => endDate(b).localeCompare(endDate(a)));
 }
 
-function tagChip(name) {
-  const span = document.createElement('span');
-  span.className = 'tag ' + (TAG_CLASS[name] || 'tag-side');
-  span.textContent = name;
-  return span;
-}
-
 function thumbHTML(p) {
-  // 커버 이미지가 준비되면 images/<category>/<id>/cover.jpg 로 자동 표시됩니다.
   const cover = `images/${p.category}/${p.id}/cover.jpg`;
   return `<img src="${cover}" alt="${p.title}" loading="lazy"
             onerror="this.style.display='none';this.parentElement.classList.add('no-image')" />`;
@@ -167,9 +166,8 @@ function thumbHTML(p) {
 
 // ===== 홈 카드 (작은 그리드) =====
 function homeCard(p) {
-  const card = document.createElement('a');
+  const card = document.createElement('div');
   card.className = 'project-card';
-  card.href = `#project/${p.id}`;
 
   const tags = p.tags.map(t => `<span class="tag ${TAG_CLASS[t] || 'tag-side'}">${t}</span>`).join('');
   card.innerHTML = `
@@ -179,14 +177,14 @@ function homeCard(p) {
       <div class="card-tags">${tags}</div>
       ${p.period ? `<p class="project-period">${p.period}</p>` : ''}
     </div>`;
+  card.addEventListener('click', () => openLightbox(p.id));
   return card;
 }
 
 // ===== 카테고리 카드 (큰 2열 그리드) =====
 function bigCard(p) {
-  const card = document.createElement('a');
+  const card = document.createElement('div');
   card.className = 'big-card';
-  card.href = `#project/${p.id}`;
 
   const tags = p.tags.map(t => `<span class="tag ${TAG_CLASS[t] || 'tag-side'}">${t}</span>`).join('');
   card.innerHTML = `
@@ -196,6 +194,7 @@ function bigCard(p) {
       <div class="card-tags">${tags}</div>
       ${p.period ? `<p class="project-period">${p.period}</p>` : ''}
     </div>`;
+  card.addEventListener('click', () => openLightbox(p.id));
   return card;
 }
 
@@ -223,38 +222,10 @@ function renderCategory(category) {
   observeFadeIn(document.getElementById('view-category'));
 }
 
-function renderDetail(id) {
-  const p = PROJECTS.find(x => x.id === id);
-  if (!p) { location.hash = ''; return; }
-
-  document.getElementById('detailBack').href = `#${p.category}`;
-
-  const tagsEl = document.getElementById('detailTags');
-  tagsEl.innerHTML = '';
-  p.tags.forEach(t => tagsEl.appendChild(tagChip(t)));
-
-  document.getElementById('detailTitle').textContent = p.title;
-  document.getElementById('detailPeriod').textContent = p.period || '';
-
-  document.getElementById('detailDesc').textContent = p.desc;
-
-  const imagesEl = document.getElementById('detailImages');
-  imagesEl.innerHTML = '';
-  (p.images || []).forEach(src => {
-    const img = document.createElement('img');
-    img.src = src;
-    img.alt = p.title;
-    img.loading = 'lazy';
-    img.onerror = () => img.remove();
-    imagesEl.appendChild(img);
-  });
-}
-
 // ===== 라우터 =====
 const views = {
   home: document.getElementById('view-home'),
   category: document.getElementById('view-category'),
-  detail: document.getElementById('view-detail'),
 };
 
 function showView(name) {
@@ -262,15 +233,7 @@ function showView(name) {
 }
 
 function route() {
-  const hash = location.hash.slice(1); // '' | 'about' | 'uiux' | 'project/xxx'
-
-  if (hash.startsWith('project/')) {
-    const id = hash.split('/')[1];
-    showView('detail');
-    renderDetail(id);
-    window.scrollTo(0, 0);
-    return;
-  }
+  const hash = location.hash.slice(1);
 
   if (hash === 'uiux' || hash === 'aivideo' || hash === 'branding') {
     showView('category');
@@ -279,7 +242,6 @@ function route() {
     return;
   }
 
-  // 홈 (about 포함)
   showView('home');
   if (hash === 'about') {
     document.getElementById('about').scrollIntoView({ behavior: 'smooth' });
@@ -287,6 +249,61 @@ function route() {
     window.scrollTo(0, 0);
   }
 }
+
+// ===== 라이트박스 =====
+let lbImages = [];
+let lbIndex = 0;
+let lbTouchStartX = 0;
+
+const lb = document.getElementById('lightbox');
+const lbImg = lb.querySelector('.lb-img');
+const lbCounter = lb.querySelector('.lb-counter');
+const lbPrev = lb.querySelector('.lb-prev');
+const lbNext = lb.querySelector('.lb-next');
+const lbBackdrop = lb.querySelector('.lb-backdrop');
+const lbClose = lb.querySelector('.lb-close');
+
+function openLightbox(projectId) {
+  const p = PROJECTS.find(x => x.id === projectId);
+  if (!p || !p.images?.length) return;
+  lbImages = p.images;
+  showSlide(0);
+  lb.hidden = false;
+  document.body.style.overflow = 'hidden';
+}
+
+function closeLightbox() {
+  lb.hidden = true;
+  document.body.style.overflow = '';
+}
+
+function showSlide(i) {
+  lbIndex = i;
+  lbImg.src = lbImages[i];
+  lbCounter.textContent = `${i + 1} / ${lbImages.length}`;
+  lbPrev.disabled = i === 0;
+  lbNext.disabled = i === lbImages.length - 1;
+}
+
+lbBackdrop.addEventListener('click', closeLightbox);
+lbClose.addEventListener('click', closeLightbox);
+lbPrev.addEventListener('click', () => { if (lbIndex > 0) showSlide(lbIndex - 1); });
+lbNext.addEventListener('click', () => { if (lbIndex < lbImages.length - 1) showSlide(lbIndex + 1); });
+
+document.addEventListener('keydown', e => {
+  if (lb.hidden) return;
+  if (e.key === 'Escape') closeLightbox();
+  if (e.key === 'ArrowLeft' && lbIndex > 0) showSlide(lbIndex - 1);
+  if (e.key === 'ArrowRight' && lbIndex < lbImages.length - 1) showSlide(lbIndex + 1);
+});
+
+lb.addEventListener('touchstart', e => { lbTouchStartX = e.touches[0].clientX; }, { passive: true });
+lb.addEventListener('touchend', e => {
+  const dx = e.changedTouches[0].clientX - lbTouchStartX;
+  if (Math.abs(dx) < 40) return;
+  if (dx < 0 && lbIndex < lbImages.length - 1) showSlide(lbIndex + 1);
+  if (dx > 0 && lbIndex > 0) showSlide(lbIndex - 1);
+}, { passive: true });
 
 // ===== 등장 애니메이션 =====
 const observer = new IntersectionObserver((entries) => {
@@ -318,7 +335,7 @@ function applyTheme(theme) {
   themeIcon.textContent = dark ? '☀️' : '🌙';
 }
 
-applyTheme(localStorage.getItem('theme') || 'light');
+applyTheme(localStorage.getItem('theme') || 'dark');
 
 themeToggle.addEventListener('click', () => {
   const next = document.body.classList.contains('dark') ? 'light' : 'dark';

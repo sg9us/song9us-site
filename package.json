@@ -1,0 +1,11 @@
+{
+  "name": "song9us-portfolio",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "sync-notion": "node scripts/fetch-notion.mjs"
+  },
+  "dependencies": {
+    "sharp": "^0.33.5"
+  }
+}

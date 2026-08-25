@@ -114,22 +114,24 @@
     <div class="big-grid" id="catGrid"></div>
   </main>
 
-  <!-- ===== 상세 ===== -->
-  <main class="view" id="view-detail" hidden>
-    <article class="detail">
-      <a href="#" class="detail-back" id="detailBack">← 목록으로</a>
-      <div class="detail-tags" id="detailTags"></div>
-      <h1 class="detail-title" id="detailTitle"></h1>
-      <p class="detail-period" id="detailPeriod"></p>
-      <p class="detail-desc" id="detailDesc"></p>
-      <div class="detail-images" id="detailImages"></div>
-    </article>
-  </main>
+  <!-- ===== 라이트박스 ===== -->
+  <div id="lightbox" hidden role="dialog" aria-modal="true">
+    <div class="lb-backdrop"></div>
+    <button class="lb-close" aria-label="닫기">✕</button>
+    <button class="lb-prev" aria-label="이전">&#8249;</button>
+    <button class="lb-next" aria-label="다음">&#8250;</button>
+    <div class="lb-img-wrap">
+      <img class="lb-img" src="" alt="" />
+    </div>
+    <div class="lb-counter"></div>
+  </div>
 
   <footer>
     <p>© 2026 백송현. All rights reserved.</p>
   </footer>
 
+  <!-- 빌드 시 노션에서 생성됨. 로컬에 없으면 404로 무시되고 정적 데이터로 동작 -->
+  <script src="data/notion-data.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
