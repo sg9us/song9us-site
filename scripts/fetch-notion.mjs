@@ -83,7 +83,7 @@ async function saveCover(slug, imageUrl) {
   const dir = path.join(ROOT, 'images', 'uiux', slug);
   await mkdir(dir, { recursive: true });
   await sharp(buf)
-    .resize({ width: 1200, withoutEnlargement: true })
+    .resize({ width: 2400, withoutEnlargement: true })
     .jpeg({ quality: 80 })
     .toFile(path.join(dir, 'cover.jpg'));
 }

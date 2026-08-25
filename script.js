@@ -16,7 +16,7 @@ const PROJECTS = [
     tags: ['PC web', '사이드 프로젝트'],
     period: '2024/09/01 → 2024/10/01',
     desc: '프로젝트 상세 설명을 여기에 입력하세요.',
-    images: ['images/uiux/meetup-flow/01.jpg'],
+    images: ['images/uiux/meetup-flow/cover.jpg'],
   },
   {
     id: 'learnify',
@@ -55,7 +55,7 @@ const PROJECTS = [
     tags: ['Mobile Web', 'PC web', '실무 프로젝트'],
     period: '2023/11/01 → 2023/12/01',
     desc: '프로젝트 상세 설명을 여기에 입력하세요.',
-    images: ['images/uiux/edu-platform/01.jpg'],
+    images: ['images/uiux/edu-platform/cover.jpg'],
   },
   {
     id: 'tutice',
@@ -64,7 +64,7 @@ const PROJECTS = [
     tags: ['Mobile Web', '사이드 프로젝트'],
     period: '2023/06/24 → 2023/07/22',
     desc: '프로젝트 상세 설명을 여기에 입력하세요.',
-    images: ['images/uiux/tutice/01.jpg'],
+    images: ['images/uiux/tutice/cover.jpg'],
   },
   {
     id: 'teamup',
@@ -73,7 +73,7 @@ const PROJECTS = [
     tags: ['Mobile App', '사이드 프로젝트'],
     period: '2023/04/01 → 2023/04/30',
     desc: '프로젝트 상세 설명을 여기에 입력하세요.',
-    images: ['images/uiux/teamup/01.jpg'],
+    images: ['images/uiux/teamup/cover.jpg'],
   },
   {
     id: 'luckyslot',
