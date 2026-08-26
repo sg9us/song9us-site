@@ -1,7 +1,6 @@
-// 빌드 시 1회 실행: 노션 DB에서 제목/태그/기간 + 커버 이미지를 가져와
-// data/notion-data.js (오버라이드 데이터)와 images/uiux/<slug>/cover.jpg를 생성한다.
-// 환경변수(NOTION_TOKEN, NOTION_DATABASE_ID)가 없으면 조용히 스킵하고
-// 기존 정적 데이터(script.js의 PROJECTS)로 빌드가 계속되게 한다.
+// 빌드 시 1회 실행: 노션 DB에서 제목/태그/기간/카테고리/링크 + 커버 이미지를 가져와
+// data/notion-data.js와 images/<category>/<slug>/cover.jpg를 생성한다.
+// 환경변수(NOTION_TOKEN, NOTION_DATABASE_ID)가 없으면 조용히 스킵한다.
 
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
@@ -12,17 +11,31 @@ const DATABASE_ID = process.env.NOTION_DATABASE_ID;
 const NOTION_VERSION = '2022-06-28';
 const ROOT = path.resolve(import.meta.dirname, '..');
 
-// 노션 페이지 제목 → 사이트에서 쓰는 slug(id). 새 프로젝트를 노션에 추가하면
-// 이 맵에도 한 줄 추가해야 자동 동기화된다 (없으면 건너뛰고 경고만 출력).
-const TITLE_TO_SLUG = {
+// 기존 이미지 폴더 보호: 제목(또는 제목 변형)→slug 고정 매핑.
+// 이 목록에 있는 프로젝트는 제목이 바뀌어도 slug가 유지된다.
+const LEGACY_SLUGS = {
   '500만명의 학생을 위한 500만개의 AI 교과서, 러니파이': 'learnify',
   '약 700명 동아리 회원들의 연결을 목표로 앱 리텐션 증가': 'retention',
+  '약 700명 동아리 회원들의 연결을 목표로 앱 리텐션 증가, 콕 찌르기': 'retention',
   '과외관리의 표준, 튜티스 Tutice': 'tutice',
   '기업 교육 플랫폼 & 관리자 페이지': 'edu-platform',
   '모임 서비스 신청&개설 Flow UX 개선': 'meetup-flow',
   '팀워크를 위한 익명 칭찬 투표 앱, Team Up': 'teamup',
   '시즈널 바이럴 서비스, 럭키슬롯': 'luckyslot',
+  '검수 과정 3단계 단축하고 반복해서 사용성 검증하기': 'content-review',
 };
+
+// 노션 제목 → 자동 slug (영문/숫자만 추출 + 페이지ID 앞 6자 접미사)
+function autoSlug(title, pageId) {
+  const suffix = pageId.replace(/-/g, '').slice(0, 6);
+  const base = title
+    .replace(/\[.*?\]/g, '')     // [대괄호 내용] 제거
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-') // 영문·숫자 아닌 문자 → 하이픈
+    .replace(/^-+|-+$/g, '')     // 앞뒤 하이픈 제거
+    .replace(/-{2,}/g, '-');     // 연속 하이픈 → 1개
+  return base ? `${base}-${suffix}` : suffix;
+}
 
 function fmtDate(iso) {
   return iso ? iso.replaceAll('-', '/') : '';
@@ -97,31 +110,38 @@ async function main() {
   console.log('[notion-sync] 노션 DB 조회 중...');
   const rows = await queryAllRows();
   const overrides = {};
+  const slugsSeen = new Set(); // 중복 slug 방지
 
   for (const row of rows) {
     const props = row.properties;
     const title = (props['이름']?.title || []).map(t => t.plain_text).join('');
-    const slug = TITLE_TO_SLUG[title];
-    if (!slug) {
-      console.warn(`[notion-sync] 매핑되지 않은 제목 — 건너뜀: "${title}" (TITLE_TO_SLUG에 추가 필요)`);
-      continue;
-    }
+    if (!title) continue;
 
-    const tags = (props['태그']?.multi_select || []).map(t => t.name);
-    const period = formatPeriod(props['\b기간']?.date);
-    const link = props['링크 URL']?.url || null;
-
-    // category select → category / subtype 결정 (값 없거나 매핑 불가 시 스킵)
+    // category select 먼저 확인 — 매핑 불가 시 스킵
     const categoryVal = props['category']?.select?.name || '';
     let category, subtype = null;
-    if (categoryVal === 'UXUI')             { category = 'uiux'; }
+    if (categoryVal === 'UXUI')               { category = 'uiux'; }
     else if (categoryVal === 'AI Video 16:9') { category = 'aivideo'; subtype = '16:9'; }
     else if (categoryVal === 'AI Video 9:16') { category = 'aivideo'; subtype = '9:16'; }
     else if (categoryVal === 'Branding')      { category = 'branding'; }
     else {
-      console.warn(`[notion-sync] ${slug}: 알 수 없는 category 값 "${categoryVal}" — 스킵`);
+      console.warn(`[notion-sync] "${title}": 알 수 없는 category 값 "${categoryVal}" — 스킵`);
       continue;
     }
+
+    // slug 결정: 레거시 매핑 우선, 없으면 자동 생성
+    const slug = LEGACY_SLUGS[title] || autoSlug(title, row.id);
+
+    // 동일 slug 중복 방지 (LEGACY에서 두 제목이 같은 slug를 가리키는 경우 첫 번째 우선)
+    if (slugsSeen.has(slug)) {
+      console.log(`[notion-sync] "${title}": slug "${slug}" 중복 — 건너뜀`);
+      continue;
+    }
+    slugsSeen.add(slug);
+
+    const tags = (props['태그']?.multi_select || []).map(t => t.name);
+    const period = formatPeriod(props['\b기간']?.date);
+    const link = props['링크 URL']?.url || null;
 
     overrides[slug] = { title, tags, period, category, subtype, link };
 
@@ -129,7 +149,7 @@ async function main() {
       const imageUrl = await findFirstImageUrl(row.id);
       if (imageUrl) {
         await saveCover(slug, imageUrl, category);
-        console.log(`[notion-sync] ${slug}: 커버 이미지 갱신`);
+        console.log(`[notion-sync] ${slug} (${category}): 커버 이미지 갱신`);
       }
     } catch (err) {
       console.warn(`[notion-sync] ${slug}: 커버 이미지 처리 실패 — ${err.message}`);

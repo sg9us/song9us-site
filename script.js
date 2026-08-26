@@ -126,11 +126,18 @@ const PROJECTS = [
   },
 ];
 
-// 빌드 시 노션에서 가져온 데이터로 덮어쓰기
+// 빌드 시 노션에서 가져온 데이터로 덮어쓰기 + 신규 프로젝트 추가
 if (typeof NOTION_OVERRIDES !== 'undefined') {
   PROJECTS.forEach(p => {
     const o = NOTION_OVERRIDES[p.id];
     if (o) Object.assign(p, o);
+  });
+  // PROJECTS에 없는 신규 노션 항목을 동적으로 추가
+  const existingIds = new Set(PROJECTS.map(p => p.id));
+  Object.entries(NOTION_OVERRIDES).forEach(([slug, data]) => {
+    if (!existingIds.has(slug)) {
+      PROJECTS.push({ id: slug, images: [`images/${data.category}/${slug}/cover.jpg`], ...data });
+    }
   });
 }
 
