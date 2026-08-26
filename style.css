@@ -578,7 +578,16 @@ body.dark .tag-branding { color: #fcd34d; }
   transition: opacity 0.2s;
 }
 
-.form-submit:hover { opacity: 0.7; }
+.form-submit:hover  { opacity: 0.7; }
+.form-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.form-feedback {
+  font-size: 14px;
+  margin-top: 12px;
+  line-height: 1.5;
+}
+.form-success { color: #4a9e6b; }
+.form-error   { color: #d95252; }
 
 .contact-links {
   display: flex;

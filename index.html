@@ -86,15 +86,18 @@
           <h2 class="section-label">Contact</h2>
           <p class="contact-text">새로운 기회나 협업에 열려 있습니다.</p>
 
-          <!-- formspree.io 가입 후 YOUR_FORM_ID를 교체하세요 -->
-          <form class="contact-form" action="https://formspree.io/f/YOUR_FORM_ID" method="POST">
+          <form class="contact-form" id="contactForm"
+                action="https://formspree.io/f/mjybnlld" method="POST">
+            <input type="hidden" name="_subject" id="contactSubject" value="Portfolio Contact" />
             <div class="form-row">
-              <input type="text" name="name" placeholder="이름" required />
-              <input type="email" name="email" placeholder="이메일" required />
+              <input type="text"  name="name"    id="contactName"  placeholder="이름"   required />
+              <input type="email" name="email"                     placeholder="이메일" required />
             </div>
             <textarea name="message" placeholder="메시지를 입력하세요." rows="5" required></textarea>
-            <button type="submit" class="form-submit">보내기</button>
+            <button type="submit" class="form-submit" id="contactSubmit">보내기</button>
           </form>
+          <p class="form-feedback form-success" id="contactSuccess" hidden>메시지가 전송되었습니다. 감사합니다!</p>
+          <p class="form-feedback form-error"   id="contactError"   hidden>전송에 실패했습니다. 잠시 후 다시 시도해주세요.</p>
 
           <div class="contact-links">
             <a href="mailto:songgus147@gmail.com">Email</a>

@@ -445,6 +445,49 @@ themeToggle.addEventListener('click', () => {
   applyTheme(next);
 });
 
+// ===== Contact Form =====
+const contactForm = document.getElementById('contactForm');
+if (contactForm) {
+  const submitBtn    = document.getElementById('contactSubmit');
+  const nameInput    = document.getElementById('contactName');
+  const subjectInput = document.getElementById('contactSubject');
+  const successMsg   = document.getElementById('contactSuccess');
+  const errorMsg     = document.getElementById('contactError');
+
+  contactForm.addEventListener('submit', async e => {
+    e.preventDefault();
+    if (!contactForm.checkValidity()) {
+      contactForm.reportValidity();
+      return;
+    }
+
+    subjectInput.value = `Portfolio Contact - ${nameInput.value.trim()}`;
+    submitBtn.disabled = true;
+    submitBtn.textContent = '전송 중...';
+    successMsg.hidden = true;
+    errorMsg.hidden = true;
+
+    try {
+      const res = await fetch(contactForm.action, {
+        method: 'POST',
+        body: new FormData(contactForm),
+        headers: { Accept: 'application/json' },
+      });
+      if (res.ok) {
+        contactForm.reset();
+        successMsg.hidden = false;
+      } else {
+        errorMsg.hidden = false;
+      }
+    } catch {
+      errorMsg.hidden = false;
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = '보내기';
+    }
+  });
+}
+
 // ===== 초기화 =====
 renderHome();
 window.addEventListener('hashchange', route);
