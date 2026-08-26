@@ -76,11 +76,11 @@ async function findFirstImageUrl(pageId) {
   return null;
 }
 
-async function saveCover(slug, imageUrl) {
+async function saveCover(slug, imageUrl, category = 'uiux') {
   const res = await fetch(imageUrl);
   if (!res.ok) throw new Error(`이미지 다운로드 실패: ${res.status}`);
   const buf = Buffer.from(await res.arrayBuffer());
-  const dir = path.join(ROOT, 'images', 'uiux', slug);
+  const dir = path.join(ROOT, 'images', category, slug);
   await mkdir(dir, { recursive: true });
   await sharp(buf)
     .resize({ width: 2400, withoutEnlargement: true })
@@ -109,12 +109,22 @@ async function main() {
 
     const tags = (props['태그']?.multi_select || []).map(t => t.name);
     const period = formatPeriod(props['\b기간']?.date);
-    overrides[slug] = { title, tags, period };
+    const link = props['링크']?.url || null;
+
+    // 영상타입 select → category / subtype 결정
+    const videoType = props['영상타입']?.select?.name || '';
+    let category = 'uiux';
+    let subtype = null;
+    if (videoType === 'AI Video 9:16') { category = 'aivideo'; subtype = '9:16'; }
+    else if (videoType === 'AI Video 16:9') { category = 'aivideo'; subtype = '16:9'; }
+    else if (videoType === 'Branding') { category = 'branding'; }
+
+    overrides[slug] = { title, tags, period, category, subtype, link };
 
     try {
       const imageUrl = await findFirstImageUrl(row.id);
       if (imageUrl) {
-        await saveCover(slug, imageUrl);
+        await saveCover(slug, imageUrl, category);
         console.log(`[notion-sync] ${slug}: 커버 이미지 갱신`);
       }
     } catch (err) {

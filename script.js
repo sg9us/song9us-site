@@ -1,4 +1,4 @@
-// ===== 프로젝트 데이터 (최신순으로 정렬) =====
+// ===== 프로젝트 데이터 =====
 const PROJECTS = [
   {
     id: 'content-review',
@@ -89,20 +89,22 @@ const PROJECTS = [
   {
     id: 'aivideo-a',
     category: 'aivideo',
+    subtype: '16:9',
     title: 'AI 영상 제목 A',
     tags: ['AI Video'],
     period: '',
-    desc: 'AI Video 프로젝트 설명을 여기에 입력하세요.',
-    images: ['images/aivideo/aivideo-a/01.jpg'],
+    link: null,
+    images: [],
   },
   {
     id: 'aivideo-b',
     category: 'aivideo',
+    subtype: '9:16',
     title: 'AI 영상 제목 B',
     tags: ['AI Video'],
     period: '',
-    desc: 'AI Video 프로젝트 설명을 여기에 입력하세요.',
-    images: ['images/aivideo/aivideo-b/01.jpg'],
+    link: null,
+    images: [],
   },
 
   // ===== Branding (임시 — 실제 내용으로 교체 예정) =====
@@ -112,7 +114,6 @@ const PROJECTS = [
     title: '브랜딩 프로젝트 제목 A',
     tags: ['Branding'],
     period: '',
-    desc: '브랜딩 프로젝트 설명을 여기에 입력하세요.',
     images: ['images/branding/branding-a/01.jpg'],
   },
   {
@@ -121,12 +122,11 @@ const PROJECTS = [
     title: '브랜딩 프로젝트 제목 B',
     tags: ['Branding'],
     period: '',
-    desc: '브랜딩 프로젝트 설명을 여기에 입력하세요.',
     images: ['images/branding/branding-b/01.jpg'],
   },
 ];
 
-// 빌드 시 노션에서 가져온 제목/태그/기간으로 덮어쓰기 (데이터/이미지는 그대로 유지)
+// 빌드 시 노션에서 가져온 데이터로 덮어쓰기
 if (typeof NOTION_OVERRIDES !== 'undefined') {
   PROJECTS.forEach(p => {
     const o = NOTION_OVERRIDES[p.id];
@@ -164,34 +164,82 @@ function thumbHTML(p) {
             onerror="this.style.display='none';this.parentElement.classList.add('no-image')" />`;
 }
 
-// ===== 홈 카드 (작은 그리드) =====
+function tagsHTML(tags) {
+  return tags.map(t => `<span class="tag ${TAG_CLASS[t] || 'tag-side'}">${t}</span>`).join('');
+}
+
+// ===== 홈 카드 =====
 function homeCard(p) {
   const card = document.createElement('div');
   card.className = 'project-card';
-
-  const tags = p.tags.map(t => `<span class="tag ${TAG_CLASS[t] || 'tag-side'}">${t}</span>`).join('');
   card.innerHTML = `
     <div class="project-thumb">${thumbHTML(p)}</div>
     <div class="project-info">
       <h3 class="project-name">${p.title}</h3>
-      <div class="card-tags">${tags}</div>
+      <div class="card-tags">${tagsHTML(p.tags)}</div>
+      ${p.period ? `<p class="project-period">${p.period}</p>` : ''}
+    </div>`;
+
+  if (p.category === 'aivideo') {
+    if (p.link) {
+      card.addEventListener('click', () => window.open(p.link, '_blank', 'noopener'));
+    } else {
+      card.style.cursor = 'default';
+    }
+  } else {
+    card.addEventListener('click', () => openLightbox(p.id));
+  }
+  return card;
+}
+
+// ===== UI/UX 카테고리 카드 (2열 큰 그리드) =====
+function bigCard(p) {
+  const card = document.createElement('div');
+  card.className = 'big-card';
+  card.innerHTML = `
+    <div class="big-thumb">${thumbHTML(p)}</div>
+    <div class="big-info">
+      <h3 class="big-name">${p.title}</h3>
+      <div class="card-tags">${tagsHTML(p.tags)}</div>
       ${p.period ? `<p class="project-period">${p.period}</p>` : ''}
     </div>`;
   card.addEventListener('click', () => openLightbox(p.id));
   return card;
 }
 
-// ===== 카테고리 카드 (큰 2열 그리드) =====
-function bigCard(p) {
+// ===== AI Video 카드 =====
+function avCard(p) {
+  const is916 = p.subtype === '9:16';
+  const pending = !p.link;
   const card = document.createElement('div');
-  card.className = 'big-card';
+  card.className = `av-card${pending ? ' pending' : ''}`;
 
-  const tags = p.tags.map(t => `<span class="tag ${TAG_CLASS[t] || 'tag-side'}">${t}</span>`).join('');
   card.innerHTML = `
-    <div class="big-thumb">${thumbHTML(p)}</div>
-    <div class="big-info">
-      <h3 class="big-name">${p.title}</h3>
-      <div class="card-tags">${tags}</div>
+    <div class="${is916 ? 'av-thumb-916' : 'av-thumb-169'}">
+      ${thumbHTML(p)}
+      ${pending ? '<span class="badge-pending">준비중</span>' : ''}
+    </div>
+    <div class="av-info">
+      <h3 class="av-name">${p.title}</h3>
+      <div class="card-tags">${tagsHTML(p.tags)}</div>
+      ${p.period ? `<p class="project-period">${p.period}</p>` : ''}
+    </div>`;
+
+  if (p.link) {
+    card.addEventListener('click', () => window.open(p.link, '_blank', 'noopener'));
+  }
+  return card;
+}
+
+// ===== Branding 카드 (1:1) =====
+function brandingCard(p) {
+  const card = document.createElement('div');
+  card.className = 'branding-card';
+  card.innerHTML = `
+    <div class="branding-thumb">${thumbHTML(p)}</div>
+    <div class="branding-info">
+      <h3 class="branding-name">${p.title}</h3>
+      <div class="card-tags">${tagsHTML(p.tags)}</div>
       ${p.period ? `<p class="project-period">${p.period}</p>` : ''}
     </div>`;
   card.addEventListener('click', () => openLightbox(p.id));
@@ -218,7 +266,36 @@ function renderCategory(category) {
   document.getElementById('catCount').textContent = `${list.length} projects`;
   const grid = document.getElementById('catGrid');
   grid.innerHTML = '';
-  list.forEach(p => grid.appendChild(bigCard(p)));
+
+  if (category === 'aivideo') {
+    grid.className = 'av-sections';
+    const longform = list.filter(p => p.subtype !== '9:16');
+    const shorts   = list.filter(p => p.subtype === '9:16');
+
+    const makeSection = (label, items, rowClass) => {
+      if (!items.length) return;
+      const sec = document.createElement('div');
+      const h = document.createElement('p');
+      h.className = 'av-subheading';
+      h.textContent = label;
+      const row = document.createElement('div');
+      row.className = rowClass;
+      items.forEach(p => row.appendChild(avCard(p)));
+      sec.appendChild(h);
+      sec.appendChild(row);
+      grid.appendChild(sec);
+    };
+
+    makeSection('Longform · 16:9', longform, 'av-grid-169');
+    makeSection('Shorts · 9:16',   shorts,   'av-grid-916');
+  } else if (category === 'branding') {
+    grid.className = 'branding-grid';
+    list.forEach(p => grid.appendChild(brandingCard(p)));
+  } else {
+    grid.className = 'big-grid';
+    list.forEach(p => grid.appendChild(bigCard(p)));
+  }
+
   observeFadeIn(document.getElementById('view-category'));
 }
 
@@ -249,6 +326,14 @@ function route() {
     window.scrollTo(0, 0);
   }
 }
+
+// 로고 클릭 → 항상 홈으로
+document.querySelector('.nav-logo').addEventListener('click', e => {
+  e.preventDefault();
+  history.pushState(null, '', location.pathname);
+  showView('home');
+  window.scrollTo(0, 0);
+});
 
 // ===== 라이트박스 =====
 let lbImages = [];
@@ -311,7 +396,7 @@ const observer = new IntersectionObserver((entries) => {
 }, { threshold: 0.08 });
 
 function observeFadeIn(root) {
-  root.querySelectorAll('.project-card, .big-card, .about-col, .contact-col').forEach(el => {
+  root.querySelectorAll('.project-card, .big-card, .av-card, .branding-card, .about-col, .contact-col').forEach(el => {
     if (!el.classList.contains('fade-in')) {
       el.classList.add('fade-in');
       observer.observe(el);
