@@ -225,13 +225,27 @@ function renderHome() {
   ui.innerHTML = '';
   av.innerHTML = '';
   br.innerHTML = '';
+  // UI/UX: 기존 가로형 카드
   projectsOf('uiux').slice(0, 4).forEach(p => ui.appendChild(homeCard(p)));
-  // AI Video: 9:16 먼저, 그 아래 16:9
+
+  // AI Video: 카테고리 상세와 동일한 avCard 재사용, 9:16 행 먼저
+  av.className = 'av-sections';
   const avAll = projectsOf('aivideo');
   const av916 = avAll.filter(p => p.subtype === '9:16');
   const av169 = avAll.filter(p => p.subtype !== '9:16');
-  [...av916, ...av169].slice(0, 6).forEach(p => av.appendChild(homeCard(p)));
-  projectsOf('branding').slice(0, 6).forEach(p => br.appendChild(homeCard(p)));
+  const makeAvRow = (items, gridClass) => {
+    if (!items.length) return;
+    const row = document.createElement('div');
+    row.className = gridClass;
+    items.slice(0, 4).forEach(p => row.appendChild(avCard(p)));
+    av.appendChild(row);
+  };
+  makeAvRow(av916, 'av-grid-916');
+  makeAvRow(av169, 'av-grid-169');
+
+  // Branding: 카테고리 상세와 동일한 brandingCard 재사용
+  br.className = 'branding-grid';
+  projectsOf('branding').slice(0, 6).forEach(p => br.appendChild(brandingCard(p)));
   observeFadeIn(document.getElementById('view-home'));
 }
 
