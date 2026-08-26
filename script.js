@@ -286,7 +286,7 @@ function renderCategory(category) {
       grid.appendChild(sec);
     };
 
-    makeSection('Longform · 16:9', longform, 'av-grid-169');
+    makeSection('Video · 16:9', longform, 'av-grid-169');
     makeSection('Shorts · 9:16',   shorts,   'av-grid-916');
   } else if (category === 'branding') {
     grid.className = 'branding-grid';

@@ -109,15 +109,19 @@ async function main() {
 
     const tags = (props['태그']?.multi_select || []).map(t => t.name);
     const period = formatPeriod(props['\b기간']?.date);
-    const link = props['링크']?.url || null;
+    const link = props['링크 URL']?.url || null;
 
-    // 영상타입 select → category / subtype 결정
-    const videoType = props['영상타입']?.select?.name || '';
-    let category = 'uiux';
-    let subtype = null;
-    if (videoType === 'AI Video 9:16') { category = 'aivideo'; subtype = '9:16'; }
-    else if (videoType === 'AI Video 16:9') { category = 'aivideo'; subtype = '16:9'; }
-    else if (videoType === 'Branding') { category = 'branding'; }
+    // category select → category / subtype 결정 (값 없거나 매핑 불가 시 스킵)
+    const categoryVal = props['category']?.select?.name || '';
+    let category, subtype = null;
+    if (categoryVal === 'UXUI')             { category = 'uiux'; }
+    else if (categoryVal === 'AI Video 16:9') { category = 'aivideo'; subtype = '16:9'; }
+    else if (categoryVal === 'AI Video 9:16') { category = 'aivideo'; subtype = '9:16'; }
+    else if (categoryVal === 'Branding')      { category = 'branding'; }
+    else {
+      console.warn(`[notion-sync] ${slug}: 알 수 없는 category 값 "${categoryVal}" — 스킵`);
+      continue;
+    }
 
     overrides[slug] = { title, tags, period, category, subtype, link };
 
