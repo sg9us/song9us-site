@@ -124,6 +124,13 @@ nav.scrolled { border-bottom-color: var(--border); }
   text-transform: uppercase;
 }
 
+.works-count {
+  font-weight: 400;
+  opacity: 0.45;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
 .works-more {
   font-size: 13px;
   color: var(--gray);

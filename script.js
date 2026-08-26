@@ -225,6 +225,15 @@ function renderHome() {
   ui.innerHTML = '';
   av.innerHTML = '';
   br.innerHTML = '';
+  // 섹션 타이틀에 총 프로젝트 개수 표시
+  const setCount = (id, label, count) => {
+    document.getElementById(id).innerHTML =
+      `${label}<span class="works-count"> · ${count}</span>`;
+  };
+  setCount('titleUiux',     'UI/UX',    projectsOf('uiux').length);
+  setCount('titleAivideo',  'AI Video', projectsOf('aivideo').length);
+  setCount('titleBranding', 'Branding', projectsOf('branding').length);
+
   // UI/UX: 기존 가로형 카드
   projectsOf('uiux').slice(0, 4).forEach(p => ui.appendChild(homeCard(p)));
 
