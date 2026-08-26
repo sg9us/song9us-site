@@ -470,7 +470,9 @@ if (contactForm) {
       return;
     }
 
-    subjectInput.value = `Portfolio Contact - ${nameInput.value.trim()}`;
+    const msgPreview = (contactForm.querySelector('textarea[name="message"]').value || '')
+      .replace(/\s+/g, ' ').trim().slice(0, 40);
+    subjectInput.value = `새 문의 | ${nameInput.value.trim()} | ${msgPreview}`;
     submitBtn.disabled = true;
     submitBtn.textContent = '전송 중...';
     successMsg.hidden = true;
