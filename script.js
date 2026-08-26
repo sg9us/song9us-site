@@ -85,45 +85,6 @@ const PROJECTS = [
     images: ['images/uiux/luckyslot/cover.jpg'],
   },
 
-  // ===== AI Video (임시 — 실제 내용으로 교체 예정) =====
-  {
-    id: 'aivideo-a',
-    category: 'aivideo',
-    subtype: '16:9',
-    title: 'AI 영상 제목 A',
-    tags: ['AI Video'],
-    period: '',
-    link: null,
-    images: [],
-  },
-  {
-    id: 'aivideo-b',
-    category: 'aivideo',
-    subtype: '9:16',
-    title: 'AI 영상 제목 B',
-    tags: ['AI Video'],
-    period: '',
-    link: null,
-    images: [],
-  },
-
-  // ===== Branding (임시 — 실제 내용으로 교체 예정) =====
-  {
-    id: 'branding-a',
-    category: 'branding',
-    title: '브랜딩 프로젝트 제목 A',
-    tags: ['Branding'],
-    period: '',
-    images: ['images/branding/branding-a/01.jpg'],
-  },
-  {
-    id: 'branding-b',
-    category: 'branding',
-    title: '브랜딩 프로젝트 제목 B',
-    tags: ['Branding'],
-    period: '',
-    images: ['images/branding/branding-b/01.jpg'],
-  },
 ];
 
 // 빌드 시 노션에서 가져온 데이터로 덮어쓰기 + 신규 프로젝트 추가
@@ -153,6 +114,13 @@ const TAG_CLASS = {
   '사이드 프로젝트': 'tag-side',
 };
 
+// YouTube URL → 영상 ID (11자리)
+function extractYouTubeId(url) {
+  if (!url) return null;
+  const m = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/);
+  return m ? m[1] : null;
+}
+
 // ===== 헬퍼 =====
 function endDate(p) {
   const end = (p.period || '').split('→').pop().trim();
@@ -166,7 +134,7 @@ function projectsOf(category) {
 }
 
 function thumbHTML(p) {
-  const cover = `images/${p.category}/${p.id}/cover.jpg`;
+  const cover = p.images?.[0] || `images/${p.category}/${p.id}/cover.jpg`;
   return `<img src="${cover}" alt="${p.title}" loading="lazy"
             onerror="this.style.display='none';this.parentElement.classList.add('no-image')" />`;
 }
@@ -187,12 +155,8 @@ function homeCard(p) {
       ${p.period ? `<p class="project-period">${p.period}</p>` : ''}
     </div>`;
 
-  if (p.category === 'aivideo') {
-    if (p.link) {
-      card.addEventListener('click', () => window.open(p.link, '_blank', 'noopener'));
-    } else {
-      card.style.cursor = 'default';
-    }
+  if (p.category === 'aivideo' && !p.link) {
+    card.style.cursor = 'default';
   } else {
     card.addEventListener('click', () => openLightbox(p.id));
   }
@@ -233,7 +197,7 @@ function avCard(p) {
     </div>`;
 
   if (p.link) {
-    card.addEventListener('click', () => window.open(p.link, '_blank', 'noopener'));
+    card.addEventListener('click', () => openLightbox(p.id));
   }
   return card;
 }
@@ -262,8 +226,12 @@ function renderHome() {
   av.innerHTML = '';
   br.innerHTML = '';
   projectsOf('uiux').slice(0, 4).forEach(p => ui.appendChild(homeCard(p)));
-  projectsOf('aivideo').slice(0, 4).forEach(p => av.appendChild(homeCard(p)));
-  projectsOf('branding').slice(0, 4).forEach(p => br.appendChild(homeCard(p)));
+  // AI Video: 9:16 먼저, 그 아래 16:9
+  const avAll = projectsOf('aivideo');
+  const av916 = avAll.filter(p => p.subtype === '9:16');
+  const av169 = avAll.filter(p => p.subtype !== '9:16');
+  [...av916, ...av169].slice(0, 6).forEach(p => av.appendChild(homeCard(p)));
+  projectsOf('branding').slice(0, 6).forEach(p => br.appendChild(homeCard(p)));
   observeFadeIn(document.getElementById('view-home'));
 }
 
@@ -349,6 +317,9 @@ let lbTouchStartX = 0;
 
 const lb = document.getElementById('lightbox');
 const lbImg = lb.querySelector('.lb-img');
+const lbImgWrap = lb.querySelector('.lb-img-wrap');
+const lbVideoWrap = lb.querySelector('.lb-video-wrap');
+const lbIframe = lb.querySelector('.lb-iframe');
 const lbCounter = lb.querySelector('.lb-counter');
 const lbPrev = lb.querySelector('.lb-prev');
 const lbNext = lb.querySelector('.lb-next');
@@ -357,7 +328,31 @@ const lbClose = lb.querySelector('.lb-close');
 
 function openLightbox(projectId) {
   const p = PROJECTS.find(x => x.id === projectId);
-  if (!p || !p.images?.length) return;
+  if (!p) return;
+
+  // AI Video: YouTube iframe embed
+  if (p.category === 'aivideo') {
+    const videoId = extractYouTubeId(p.link);
+    if (videoId) {
+      lbImgWrap.hidden = true;
+      lbVideoWrap.hidden = false;
+      lbPrev.hidden = true;
+      lbNext.hidden = true;
+      lbCounter.textContent = '';
+      lbVideoWrap.dataset.ratio = p.subtype === '9:16' ? '9/16' : '16/9';
+      lbIframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
+      lb.hidden = false;
+      document.body.style.overflow = 'hidden';
+    }
+    return;
+  }
+
+  // 이미지 슬라이더
+  if (!p.images?.length) return;
+  lbImgWrap.hidden = false;
+  lbVideoWrap.hidden = true;
+  lbPrev.hidden = false;
+  lbNext.hidden = false;
   lbImages = p.images;
   showSlide(0);
   lb.hidden = false;
@@ -367,6 +362,7 @@ function openLightbox(projectId) {
 function closeLightbox() {
   lb.hidden = true;
   document.body.style.overflow = '';
+  lbIframe.src = '';  // 영상 재생 중단
 }
 
 function showSlide(i) {

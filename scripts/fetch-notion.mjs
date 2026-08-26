@@ -37,6 +37,13 @@ function autoSlug(title, pageId) {
   return base ? `${base}-${suffix}` : suffix;
 }
 
+// YouTube URL → 영상 ID (11자리)
+function extractYouTubeId(url) {
+  if (!url) return null;
+  const m = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/);
+  return m ? m[1] : null;
+}
+
 function fmtDate(iso) {
   return iso ? iso.replaceAll('-', '/') : '';
 }
@@ -79,26 +86,62 @@ async function queryAllRows() {
   return rows;
 }
 
-async function findFirstImageUrl(pageId) {
-  const data = await notionFetch(`https://api.notion.com/v1/blocks/${pageId}/children?page_size=50`);
+// 페이지 본문의 이미지 블록 URL을 순서대로 모두 반환
+async function findAllImageUrls(pageId) {
+  const data = await notionFetch(`https://api.notion.com/v1/blocks/${pageId}/children?page_size=100`);
+  const urls = [];
   for (const block of data.results) {
     if (block.type === 'image') {
-      return block.image.file?.url || block.image.external?.url || null;
+      const url = block.image.file?.url || block.image.external?.url;
+      if (url) urls.push(url);
     }
   }
-  return null;
+  return urls;
 }
 
-async function saveCover(slug, imageUrl, category = 'uiux') {
-  const res = await fetch(imageUrl);
-  if (!res.ok) throw new Error(`이미지 다운로드 실패: ${res.status}`);
-  const buf = Buffer.from(await res.arrayBuffer());
+// 이미지 URL 배열 저장: 첫 번째 → cover.jpg, 이후 → 02.jpg, 03.jpg ...
+// 저장된 상대 경로 배열 반환
+async function saveImages(slug, imageUrls, category) {
   const dir = path.join(ROOT, 'images', category, slug);
   await mkdir(dir, { recursive: true });
-  await sharp(buf)
-    .resize({ width: 2400, withoutEnlargement: true })
-    .jpeg({ quality: 80 })
-    .toFile(path.join(dir, 'cover.jpg'));
+  const saved = [];
+  for (let i = 0; i < imageUrls.length; i++) {
+    const res = await fetch(imageUrls[i]);
+    if (!res.ok) {
+      console.warn(`  [image ${i + 1}] 다운로드 실패: ${res.status}`);
+      continue;
+    }
+    const buf = Buffer.from(await res.arrayBuffer());
+    const filename = i === 0 ? 'cover.jpg' : `${String(i + 1).padStart(2, '0')}.jpg`;
+    await sharp(buf)
+      .resize({ width: 2400, withoutEnlargement: true })
+      .jpeg({ quality: 80 })
+      .toFile(path.join(dir, filename));
+    saved.push(`images/${category}/${slug}/${filename}`);
+  }
+  return saved;
+}
+
+// YouTube 썸네일을 cover.jpg로 저장 (maxresdefault → hqdefault 폴백)
+async function saveYouTubeThumbnail(slug, videoId, category) {
+  const dir = path.join(ROOT, 'images', category, slug);
+  await mkdir(dir, { recursive: true });
+  const coverPath = `images/${category}/${slug}/cover.jpg`;
+
+  for (const quality of ['maxresdefault', 'hqdefault']) {
+    const url = `https://img.youtube.com/vi/${videoId}/${quality}.jpg`;
+    const res = await fetch(url);
+    if (!res.ok) continue;
+    const buf = Buffer.from(await res.arrayBuffer());
+    // YouTube 404 placeholder는 120×90 — 실제 썸네일인지 확인
+    if (buf.length < 5000 && quality !== 'hqdefault') continue;
+    await sharp(buf)
+      .resize({ width: 2400, withoutEnlargement: true })
+      .jpeg({ quality: 80 })
+      .toFile(path.join(dir, 'cover.jpg'));
+    return coverPath;
+  }
+  return null;
 }
 
 async function main() {
@@ -110,7 +153,7 @@ async function main() {
   console.log('[notion-sync] 노션 DB 조회 중...');
   const rows = await queryAllRows();
   const overrides = {};
-  const slugsSeen = new Set(); // 중복 slug 방지
+  const slugsSeen = new Set();
 
   for (const row of rows) {
     const props = row.properties;
@@ -129,10 +172,8 @@ async function main() {
       continue;
     }
 
-    // slug 결정: 레거시 매핑 우선, 없으면 자동 생성
     const slug = LEGACY_SLUGS[title] || autoSlug(title, row.id);
 
-    // 동일 slug 중복 방지 (LEGACY에서 두 제목이 같은 slug를 가리키는 경우 첫 번째 우선)
     if (slugsSeen.has(slug)) {
       console.log(`[notion-sync] "${title}": slug "${slug}" 중복 — 건너뜀`);
       continue;
@@ -143,17 +184,32 @@ async function main() {
     const period = formatPeriod(props['\b기간']?.date);
     const link = props['링크 URL']?.url || null;
 
-    overrides[slug] = { title, tags, period, category, subtype, link };
+    let images = [];
 
     try {
-      const imageUrl = await findFirstImageUrl(row.id);
-      if (imageUrl) {
-        await saveCover(slug, imageUrl, category);
-        console.log(`[notion-sync] ${slug} (${category}): 커버 이미지 갱신`);
+      if (category === 'aivideo') {
+        // AI Video: YouTube 썸네일을 cover로 사용 (라이트박스는 iframe embed)
+        const videoId = extractYouTubeId(link);
+        if (videoId) {
+          const coverPath = await saveYouTubeThumbnail(slug, videoId, category);
+          if (coverPath) {
+            images = [coverPath];
+            console.log(`[notion-sync] ${slug} (${category}): YouTube 썸네일 저장`);
+          }
+        }
+      } else {
+        // UIUX / Branding: 페이지 내 모든 이미지를 슬라이드로 저장
+        const imageUrls = await findAllImageUrls(row.id);
+        if (imageUrls.length) {
+          images = await saveImages(slug, imageUrls, category);
+          console.log(`[notion-sync] ${slug} (${category}): 이미지 ${images.length}장 저장`);
+        }
       }
     } catch (err) {
-      console.warn(`[notion-sync] ${slug}: 커버 이미지 처리 실패 — ${err.message}`);
+      console.warn(`[notion-sync] ${slug}: 이미지 처리 실패 — ${err.message}`);
     }
+
+    overrides[slug] = { title, tags, period, category, subtype, link, images };
   }
 
   await mkdir(path.join(ROOT, 'data'), { recursive: true });
