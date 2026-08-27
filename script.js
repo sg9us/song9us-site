@@ -1,4 +1,5 @@
 // ===== 프로젝트 데이터 =====
+// desc: 카드 설명 문구, 추후 UI 노출 예정, 현재는 렌더링 미사용
 const PROJECTS = [
   {
     id: 'content-review',
@@ -115,6 +116,7 @@ const TAG_CLASS = {
 };
 
 // YouTube URL → 영상 ID (11자리)
+// 주의: 동일 로직이 scripts/fetch-notion.mjs에도 있음 — 수정 시 두 파일 함께 변경
 function extractYouTubeId(url) {
   if (!url) return null;
   const m = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/);
@@ -133,9 +135,12 @@ function projectsOf(category) {
     .sort((a, b) => endDate(b).localeCompare(endDate(a)));
 }
 
-function thumbHTML(p) {
+// eager: 뷰포트 최초 노출 카드에 true (LCP 최적화)
+// w/h: 이미지 고유 비율 힌트 → 브라우저가 CSS 적용 전에 공간 예약해 레이아웃 시프트 방지
+function thumbHTML(p, { eager = false, w = '16', h = '9' } = {}) {
   const cover = p.images?.[0] || `images/${p.category}/${p.id}/cover.jpg`;
-  return `<img src="${cover}" alt="${p.title}" loading="lazy"
+  return `<img src="${cover}" alt="${p.title}" loading="${eager ? 'eager' : 'lazy'}"
+            width="${w}" height="${h}"
             onerror="this.style.display='none';this.parentElement.classList.add('no-image')" />`;
 }
 
@@ -144,22 +149,17 @@ function tagsHTML(tags) {
 }
 
 // ===== 홈 카드 =====
-function homeCard(p) {
+function homeCard(p, eager = false) {
   const card = document.createElement('div');
   card.className = 'project-card';
   card.innerHTML = `
-    <div class="project-thumb">${thumbHTML(p)}</div>
+    <div class="project-thumb">${thumbHTML(p, { eager })}</div>
     <div class="project-info">
       <h3 class="project-name">${p.title}</h3>
       <div class="card-tags">${tagsHTML(p.tags)}</div>
       ${p.period ? `<p class="project-period">${p.period}</p>` : ''}
     </div>`;
-
-  if (p.category === 'aivideo' && !p.link) {
-    card.style.cursor = 'default';
-  } else {
-    card.addEventListener('click', () => openLightbox(p.id));
-  }
+  card.addEventListener('click', () => openLightbox(p.id));
   return card;
 }
 
@@ -168,7 +168,7 @@ function bigCard(p) {
   const card = document.createElement('div');
   card.className = 'big-card';
   card.innerHTML = `
-    <div class="big-thumb">${thumbHTML(p)}</div>
+    <div class="big-thumb">${thumbHTML(p, { w: '16', h: '9' })}</div>
     <div class="big-info">
       <h3 class="big-name">${p.title}</h3>
       <div class="card-tags">${tagsHTML(p.tags)}</div>
@@ -187,7 +187,7 @@ function avCard(p) {
 
   card.innerHTML = `
     <div class="${is916 ? 'av-thumb-916' : 'av-thumb-169'}">
-      ${thumbHTML(p)}
+      ${thumbHTML(p, is916 ? { w: '9', h: '16' } : { w: '16', h: '9' })}
       ${pending ? '<span class="badge-pending">준비중</span>' : ''}
     </div>
     <div class="av-info">
@@ -207,7 +207,7 @@ function brandingCard(p) {
   const card = document.createElement('div');
   card.className = 'branding-card';
   card.innerHTML = `
-    <div class="branding-thumb">${thumbHTML(p)}</div>
+    <div class="branding-thumb">${thumbHTML(p, { w: '1', h: '1' })}</div>
     <div class="branding-info">
       <h3 class="branding-name">${p.title}</h3>
       <div class="card-tags">${tagsHTML(p.tags)}</div>
@@ -225,23 +225,27 @@ function renderHome() {
   ui.innerHTML = '';
   av.innerHTML = '';
   br.innerHTML = '';
+  // 카테고리별 목록 (정렬 포함) — 이후 length와 slice 모두 이 변수에서 파생
+  const uiList = projectsOf('uiux');
+  const avList = projectsOf('aivideo');
+  const brList = projectsOf('branding');
+
   // 섹션 타이틀에 총 프로젝트 개수 표시
   const setCount = (id, label, count) => {
     document.getElementById(id).innerHTML =
       `${label}<span class="works-count"> · ${count}</span>`;
   };
-  setCount('titleUiux',     'UI/UX',    projectsOf('uiux').length);
-  setCount('titleAivideo',  'AI Video', projectsOf('aivideo').length);
-  setCount('titleBranding', 'Branding', projectsOf('branding').length);
+  setCount('titleUiux',     'UI/UX',    uiList.length);
+  setCount('titleAivideo',  'AI Video', avList.length);
+  setCount('titleBranding', 'Branding', brList.length);
 
-  // UI/UX: 기존 가로형 카드
-  projectsOf('uiux').slice(0, 4).forEach(p => ui.appendChild(homeCard(p)));
+  // UI/UX: 첫 번째 카드는 eager 로딩(뷰포트 최초 노출)
+  uiList.slice(0, 4).forEach((p, i) => ui.appendChild(homeCard(p, i === 0)));
 
-  // AI Video: 카테고리 상세와 동일한 avCard 재사용, 9:16 행 먼저
+  // AI Video: avCard 재사용, 9:16 행 먼저
   av.className = 'av-sections';
-  const avAll = projectsOf('aivideo');
-  const av916 = avAll.filter(p => p.subtype === '9:16');
-  const av169 = avAll.filter(p => p.subtype !== '9:16');
+  const av916 = avList.filter(p => p.subtype === '9:16');
+  const av169 = avList.filter(p => p.subtype !== '9:16');
   const makeAvRow = (items, gridClass) => {
     if (!items.length) return;
     const row = document.createElement('div');
@@ -252,9 +256,9 @@ function renderHome() {
   makeAvRow(av916, 'av-grid-916');
   makeAvRow(av169, 'av-grid-169');
 
-  // Branding: 카테고리 상세와 동일한 brandingCard 재사용
+  // Branding: brandingCard 재사용
   br.className = 'branding-grid';
-  projectsOf('branding').slice(0, 6).forEach(p => br.appendChild(brandingCard(p)));
+  brList.slice(0, 6).forEach(p => br.appendChild(brandingCard(p)));
   observeFadeIn(document.getElementById('view-home'));
 }
 
@@ -410,6 +414,7 @@ document.addEventListener('keydown', e => {
 
 lb.addEventListener('touchstart', e => { lbTouchStartX = e.touches[0].clientX; }, { passive: true });
 lb.addEventListener('touchend', e => {
+  if (!lbVideoWrap.hidden) return; // 영상 재생 중 스와이프 무시
   const dx = e.changedTouches[0].clientX - lbTouchStartX;
   if (Math.abs(dx) < 40) return;
   if (dx < 0 && lbIndex < lbImages.length - 1) showSlide(lbIndex + 1);
@@ -470,7 +475,7 @@ if (contactForm) {
       return;
     }
 
-    const msgPreview = (contactForm.querySelector('textarea[name="message"]').value || '')
+    const msgPreview = (contactForm.elements['message'].value || '')
       .replace(/\s+/g, ' ').trim().slice(0, 40);
     subjectInput.value = `새 문의 | ${nameInput.value.trim()} | ${msgPreview}`;
     submitBtn.disabled = true;

@@ -38,6 +38,7 @@ function autoSlug(title, pageId) {
 }
 
 // YouTube URL → 영상 ID (11자리)
+// 주의: 동일 로직이 script.js에도 있음 — 수정 시 두 파일 함께 변경
 function extractYouTubeId(url) {
   if (!url) return null;
   const m = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/);
