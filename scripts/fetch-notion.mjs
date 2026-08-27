@@ -25,16 +25,22 @@ const LEGACY_SLUGS = {
   '검수 과정 3단계 단축하고 반복해서 사용성 검증하기': 'content-review',
 };
 
-// 노션 제목 → 자동 slug (영문/숫자만 추출 + 페이지ID 앞 6자 접미사)
-function autoSlug(title, pageId) {
-  const suffix = pageId.replace(/-/g, '').slice(0, 6);
+// 노션 제목 → 자동 slug (영문/숫자 추출 + pageId 뒤쪽 접미사)
+// pageId 뒤쪽은 앞쪽보다 무작위성이 높아 초기 충돌 확률이 낮음.
+// 10자로 시작해 slugsSeen과 충돌하면 앞으로 한 자씩 확장 → 완전한 중복 방지 보장.
+function autoSlug(title, pageId, slugsSeen) {
+  const hex = pageId.replace(/-/g, '');
   const base = title
-    .replace(/\[.*?\]/g, '')     // [대괄호 내용] 제거
+    .replace(/\[.*?\]/g, '')      // [대괄호 내용] 제거
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-') // 영문·숫자 아닌 문자 → 하이픈
     .replace(/^-+|-+$/g, '')     // 앞뒤 하이픈 제거
     .replace(/-{2,}/g, '-');     // 연속 하이픈 → 1개
-  return base ? `${base}-${suffix}` : suffix;
+  for (let len = 10; len <= hex.length; len++) {
+    const slug = base ? `${base}-${hex.slice(-len)}` : hex.slice(-len);
+    if (!slugsSeen.has(slug)) return slug;
+  }
+  return base ? `${base}-${hex}` : hex; // 최후 수단: 전체 hex 사용
 }
 
 // YouTube URL → 영상 ID (11자리)
@@ -174,7 +180,7 @@ async function main() {
       continue;
     }
 
-    const slug = LEGACY_SLUGS[title] || autoSlug(title, row.id);
+    const slug = LEGACY_SLUGS[title] || autoSlug(title, row.id, slugsSeen);
 
     if (slugsSeen.has(slug)) {
       console.log(`[notion-sync] "${title}": slug "${slug}" 중복 — 건너뜀`);
