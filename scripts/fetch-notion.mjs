@@ -167,6 +167,13 @@ async function main() {
     const title = (props['이름']?.title || []).map(t => t.plain_text).join('');
     if (!title) continue;
 
+    // "게시" 체크박스 — false이면 제외. 속성 자체가 없거나 값이 null인 기존 항목은 계속 노출
+    const published = props['게시']?.checkbox;
+    if (published === false) {
+      console.log(`[notion-sync] "${title}": 게시 미체크 — 스킵`);
+      continue;
+    }
+
     // category select 먼저 확인 — 매핑 불가 시 스킵
     const categoryVal = props['category']?.select?.name || '';
     let category, subtype = null;
@@ -196,13 +203,23 @@ async function main() {
 
     try {
       if (category === 'aivideo') {
-        // AI Video: YouTube 썸네일을 cover로 사용 (라이트박스는 iframe embed)
-        const videoId = extractYouTubeId(link);
-        if (videoId) {
-          const coverPath = await saveYouTubeThumbnail(slug, videoId, category);
-          if (coverPath) {
-            images = [coverPath];
-            console.log(`[notion-sync] ${slug} (${category}): YouTube 썸네일 저장`);
+        // AI Video: 페이지 첫 이미지 블록 우선 → 없으면 YouTube 썸네일 폴백
+        const imageUrls = await findAllImageUrls(row.id);
+        if (imageUrls.length) {
+          const saved = await saveImages(slug, [imageUrls[0]], category);
+          if (saved.length) {
+            images = saved;
+            console.log(`[notion-sync] ${slug} (${category}): 노션 이미지 cover 저장`);
+          }
+        }
+        if (!images.length) {
+          const videoId = extractYouTubeId(link);
+          if (videoId) {
+            const coverPath = await saveYouTubeThumbnail(slug, videoId, category);
+            if (coverPath) {
+              images = [coverPath];
+              console.log(`[notion-sync] ${slug} (${category}): YouTube 썸네일 저장`);
+            }
           }
         }
       } else {

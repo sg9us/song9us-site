@@ -102,7 +102,7 @@ nav.scrolled { border-bottom-color: var(--border); }
 /* ===== Works 섹션 (홈) ===== */
 .section { padding: 100px 60px; }
 
-.section-works { padding-top: 80px; }
+.section-works { padding-top: 48px; }
 
 .section-works-first { padding-top: 140px; }
 
@@ -307,7 +307,7 @@ body.dark .tag-branding { color: #fcd34d; }
 .av-thumb-916 {
   width: 100%;
   aspect-ratio: 9 / 16;
-  border-radius: 12px;
+  border-radius: 6px;
   overflow: hidden;
   background: var(--thumb-bg);
   margin-bottom: 12px;
@@ -368,7 +368,7 @@ body.dark .tag-branding { color: #fcd34d; }
 .branding-thumb {
   width: 100%;
   aspect-ratio: 1;
-  border-radius: 8px;
+  border-radius: 4px;
   overflow: hidden;
   background: var(--thumb-bg);
   margin-bottom: 14px;
