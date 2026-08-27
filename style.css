@@ -104,7 +104,15 @@ nav.scrolled { border-bottom-color: var(--border); }
 
 .section-works { padding-top: 48px; }
 
-.section-works-first { padding-top: 140px; }
+.section-works-first { padding-top: 48px; }
+
+/* 인트로 섹션: 네비게이션 높이(~64px) 아래에서 시작, 하단 여백은 works 섹션과 연결 */
+.section-intro {
+  padding-top: 160px;
+  padding-bottom: 0;
+}
+
+.intro-text { margin-bottom: 0; }
 
 .section-header {
   display: flex;
@@ -642,7 +650,8 @@ footer p { font-size: 13px; color: var(--gray); }
   .nav-right { gap: 18px; }
   .nav-links { gap: 20px; }
   .section { padding: 80px 24px; }
-  .section-works-first { padding-top: 110px; }
+  .section-intro { padding-top: 110px; padding-bottom: 0; }
+  .section-works-first { padding-top: 48px; }
   .project-grid { grid-template-columns: 1fr; gap: 36px; }
   #view-category { padding: 110px 24px 80px; }
   .category-title { font-size: 30px; }
