@@ -103,7 +103,7 @@ if (typeof NOTION_OVERRIDES !== 'undefined') {
   });
 }
 
-const CATEGORY_LABEL = { uiux: 'UI/UX', aivideo: 'AI Video', branding: 'Branding' };
+const CATEGORY_LABEL = { uiux: 'UI/UX', aivideo: 'AI Video', branding: 'Branding', article: 'Article' };
 
 const TAG_CLASS = {
   'PC web': 'tag-pcweb',
@@ -202,6 +202,41 @@ function avCard(p) {
   return card;
 }
 
+// ===== Article 카드: homeCard와 동일 비주얼, 클릭 시 링크 → 새 탭 / 없으면 라이트박스 =====
+function articleCard(p, eager = false) {
+  const card = document.createElement('div');
+  card.className = 'project-card';
+  card.innerHTML = `
+    <div class="project-thumb">${thumbHTML(p, { eager })}</div>
+    <div class="project-info">
+      <h3 class="project-name">${p.title}</h3>
+      <div class="card-tags">${tagsHTML(p.tags)}</div>
+      ${p.period ? `<p class="project-period">${p.period}</p>` : ''}
+    </div>`;
+  card.addEventListener('click', () => {
+    if (p.link) window.open(p.link, '_blank', 'noopener,noreferrer');
+    else openLightbox(p.id);
+  });
+  return card;
+}
+
+function articleBigCard(p) {
+  const card = document.createElement('div');
+  card.className = 'big-card';
+  card.innerHTML = `
+    <div class="big-thumb">${thumbHTML(p, { w: '16', h: '9' })}</div>
+    <div class="big-info">
+      <h3 class="big-name">${p.title}</h3>
+      <div class="card-tags">${tagsHTML(p.tags)}</div>
+      ${p.period ? `<p class="project-period">${p.period}</p>` : ''}
+    </div>`;
+  card.addEventListener('click', () => {
+    if (p.link) window.open(p.link, '_blank', 'noopener,noreferrer');
+    else openLightbox(p.id);
+  });
+  return card;
+}
+
 // ===== Branding 카드 (1:1) =====
 function brandingCard(p) {
   const card = document.createElement('div');
@@ -222,13 +257,17 @@ function renderHome() {
   const ui = document.getElementById('homeUiux');
   const av = document.getElementById('homeAivideo');
   const br = document.getElementById('homeBranding');
+  const ar = document.getElementById('homeArticle');
   ui.innerHTML = '';
   av.innerHTML = '';
   br.innerHTML = '';
+  ar.innerHTML = '';
+
   // 카테고리별 목록 (정렬 포함) — 이후 length와 slice 모두 이 변수에서 파생
   const uiList = projectsOf('uiux');
   const avList = projectsOf('aivideo');
   const brList = projectsOf('branding');
+  const arList = projectsOf('article');
 
   // 섹션 타이틀에 총 프로젝트 개수 표시
   const setCount = (id, label, count) => {
@@ -238,27 +277,32 @@ function renderHome() {
   setCount('titleUiux',     'UI/UX',    uiList.length);
   setCount('titleAivideo',  'AI Video', avList.length);
   setCount('titleBranding', 'Branding', brList.length);
+  setCount('titleArticle',  'Article',  arList.length);
 
   // UI/UX: 첫 번째 카드는 eager 로딩(뷰포트 최초 노출)
   uiList.slice(0, 4).forEach((p, i) => ui.appendChild(homeCard(p, i === 0)));
 
-  // AI Video: avCard 재사용, 9:16 행 먼저
+  // AI Video: 9:16 행(6열) 먼저, 16:9 행(4열)
   av.className = 'av-sections';
   const av916 = avList.filter(p => p.subtype === '9:16');
   const av169 = avList.filter(p => p.subtype !== '9:16');
-  const makeAvRow = (items, gridClass) => {
+  const makeAvRow = (items, gridClass, limit) => {
     if (!items.length) return;
     const row = document.createElement('div');
     row.className = gridClass;
-    items.slice(0, 4).forEach(p => row.appendChild(avCard(p)));
+    items.slice(0, limit).forEach(p => row.appendChild(avCard(p)));
     av.appendChild(row);
   };
-  makeAvRow(av916, 'av-grid-916');
-  makeAvRow(av169, 'av-grid-169');
+  makeAvRow(av916, 'av-grid-916-home', 6); // 홈 전용 6열 그리드
+  makeAvRow(av169, 'av-grid-169', 4);
 
   // Branding: brandingCard 재사용
   br.className = 'branding-grid';
   brList.slice(0, 6).forEach(p => br.appendChild(brandingCard(p)));
+
+  // Article: articleCard 재사용 (링크 있으면 새 탭, 없으면 라이트박스)
+  arList.slice(0, 4).forEach(p => ar.appendChild(articleCard(p)));
+
   observeFadeIn(document.getElementById('view-home'));
 }
 
@@ -293,6 +337,9 @@ function renderCategory(category) {
   } else if (category === 'branding') {
     grid.className = 'branding-grid';
     list.forEach(p => grid.appendChild(brandingCard(p)));
+  } else if (category === 'article') {
+    grid.className = 'big-grid';
+    list.forEach(p => grid.appendChild(articleBigCard(p)));
   } else {
     grid.className = 'big-grid';
     list.forEach(p => grid.appendChild(bigCard(p)));
@@ -314,7 +361,7 @@ function showView(name) {
 function route() {
   const hash = location.hash.slice(1);
 
-  if (hash === 'uiux' || hash === 'aivideo' || hash === 'branding') {
+  if (hash === 'uiux' || hash === 'aivideo' || hash === 'branding' || hash === 'article') {
     showView('category');
     renderCategory(hash);
     window.scrollTo(0, 0);

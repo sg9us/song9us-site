@@ -283,6 +283,13 @@ body.dark .tag-branding { color: #fcd34d; }
   gap: 20px;
 }
 
+/* 홈 9:16 그리드: 6열 고정 (카테고리 상세는 av-grid-916 유지) */
+.av-grid-916-home {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 20px;
+}
+
 .av-card { cursor: pointer; }
 .av-card.pending { cursor: default; }
 
@@ -635,6 +642,7 @@ footer p { font-size: 13px; color: var(--gray); }
   .big-grid { grid-template-columns: 1fr; gap: 48px; }
   .av-grid-169 { grid-template-columns: 1fr; gap: 40px; }
   .av-grid-916 { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 14px; }
+  .av-grid-916-home { grid-template-columns: repeat(3, 1fr); gap: 14px; }
   .branding-grid { grid-template-columns: repeat(2, 1fr); gap: 32px 20px; }
   .lb-prev { left: 8px; }
   .lb-next { right: 8px; }

@@ -168,6 +168,7 @@ async function main() {
     else if (categoryVal === 'AI Video 16:9') { category = 'aivideo'; subtype = '16:9'; }
     else if (categoryVal === 'AI Video 9:16') { category = 'aivideo'; subtype = '9:16'; }
     else if (categoryVal === 'Branding')      { category = 'branding'; }
+    else if (categoryVal === 'Article')       { category = 'article'; }
     else {
       console.warn(`[notion-sync] "${title}": 알 수 없는 category 값 "${categoryVal}" — 스킵`);
       continue;
@@ -199,7 +200,7 @@ async function main() {
           }
         }
       } else {
-        // UIUX / Branding: 페이지 내 모든 이미지를 슬라이드로 저장
+        // UIUX / Branding / Article: 페이지 내 모든 이미지를 슬라이드로 저장
         const imageUrls = await findAllImageUrls(row.id);
         if (imageUrls.length) {
           images = await saveImages(slug, imageUrls, category);
