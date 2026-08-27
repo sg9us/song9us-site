@@ -220,23 +220,6 @@ function articleCard(p, eager = false) {
   return card;
 }
 
-function articleBigCard(p) {
-  const card = document.createElement('div');
-  card.className = 'big-card';
-  card.innerHTML = `
-    <div class="big-thumb">${thumbHTML(p, { w: '16', h: '9' })}</div>
-    <div class="big-info">
-      <h3 class="big-name">${p.title}</h3>
-      <div class="card-tags">${tagsHTML(p.tags)}</div>
-      ${p.period ? `<p class="project-period">${p.period}</p>` : ''}
-    </div>`;
-  card.addEventListener('click', () => {
-    if (p.link) window.open(p.link, '_blank', 'noopener,noreferrer');
-    else openLightbox(p.id);
-  });
-  return card;
-}
-
 // ===== Branding 카드 (1:1) =====
 function brandingCard(p) {
   const card = document.createElement('div');
@@ -338,8 +321,8 @@ function renderCategory(category) {
     grid.className = 'branding-grid';
     list.forEach(p => grid.appendChild(brandingCard(p)));
   } else if (category === 'article') {
-    grid.className = 'big-grid';
-    list.forEach(p => grid.appendChild(articleBigCard(p)));
+    grid.className = 'article-grid';
+    list.forEach(p => grid.appendChild(articleCard(p)));
   } else {
     grid.className = 'big-grid';
     list.forEach(p => grid.appendChild(bigCard(p)));

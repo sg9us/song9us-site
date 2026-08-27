@@ -349,6 +349,13 @@ body.dark .tag-branding { color: #fcd34d; }
   line-height: 1.4;
 }
 
+/* ===== Article 카테고리 (3열, project-card 재사용) ===== */
+.article-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 60px 36px;
+}
+
 /* ===== Branding 카테고리 ===== */
 .branding-grid {
   display: grid;
@@ -643,6 +650,7 @@ footer p { font-size: 13px; color: var(--gray); }
   .av-grid-169 { grid-template-columns: 1fr; gap: 40px; }
   .av-grid-916 { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 14px; }
   .av-grid-916-home { grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .article-grid { grid-template-columns: 1fr; gap: 36px; }
   .branding-grid { grid-template-columns: repeat(2, 1fr); gap: 32px 20px; }
   .lb-prev { left: 8px; }
   .lb-next { right: 8px; }
