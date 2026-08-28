@@ -159,7 +159,7 @@ nav.scrolled { border-bottom-color: var(--border); }
 /* ===== 홈 프로젝트 그리드 ===== */
 .project-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 24px 20px;
 }
 
@@ -372,7 +372,7 @@ body.dark .tag-branding { color: #fcd34d; }
 /* ===== Article 카테고리 (3열, project-card 재사용) ===== */
 .article-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 24px 20px;
 }
 
