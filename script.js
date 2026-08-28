@@ -198,6 +198,38 @@ function avCard(p) {
 
   if (p.link) {
     card.addEventListener('click', () => openLightbox(p.id));
+
+    // 데스크톱 호버 미리보기 — hover 미지원(터치) 기기에서는 건너뜀
+    const videoId = extractYouTubeId(p.link);
+    if (videoId && window.matchMedia('(hover: hover)').matches) {
+      const thumbClass = is916 ? 'av-thumb-916' : 'av-thumb-169';
+      let previewIframe = null;
+      let stopTimer = null;
+
+      const stopPreview = () => {
+        clearTimeout(stopTimer);
+        if (!previewIframe) return;
+        const img = card.querySelector('.' + thumbClass + ' img');
+        if (img) img.style.display = '';
+        previewIframe.remove();
+        previewIframe = null;
+      };
+
+      card.addEventListener('mouseenter', () => {
+        const thumbDiv = card.querySelector('.' + thumbClass);
+        const img = thumbDiv?.querySelector('img');
+        if (!img || previewIframe) return;
+        img.style.display = 'none';
+        previewIframe = document.createElement('iframe');
+        previewIframe.setAttribute('allow', 'autoplay');
+        previewIframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&playsinline=1`;
+        previewIframe.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border:none;pointer-events:none;';
+        thumbDiv.appendChild(previewIframe);
+        stopTimer = setTimeout(stopPreview, 4000);
+      });
+
+      card.addEventListener('mouseleave', stopPreview);
+    }
   }
   return card;
 }

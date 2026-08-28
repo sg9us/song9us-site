@@ -191,7 +191,7 @@ nav.scrolled { border-bottom-color: var(--border); }
   font-size: 16px;
   font-weight: 600;
   letter-spacing: -0.02em;
-  margin-bottom: 10px;
+  margin-bottom: 16px;
   line-height: 1.45;
 }
 
@@ -259,7 +259,7 @@ body.dark .tag-branding { color: #fcd34d; }
   font-size: 18px;
   font-weight: 600;
   letter-spacing: -0.02em;
-  margin-bottom: 10px;
+  margin-bottom: 16px;
   line-height: 1.45;
 }
 
@@ -365,7 +365,7 @@ body.dark .tag-branding { color: #fcd34d; }
   font-size: 15px;
   font-weight: 600;
   letter-spacing: -0.02em;
-  margin-bottom: 8px;
+  margin-bottom: 14px;
   line-height: 1.4;
 }
 
@@ -408,7 +408,7 @@ body.dark .tag-branding { color: #fcd34d; }
   font-size: 15px;
   font-weight: 600;
   letter-spacing: -0.02em;
-  margin-bottom: 8px;
+  margin-bottom: 14px;
   line-height: 1.4;
 }
 
