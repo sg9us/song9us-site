@@ -113,10 +113,18 @@ nav.scrolled { border-bottom-color: var(--border); }
 }
 
 .intro-text {
-  margin-bottom: 0;
   max-width: 62%;
   word-break: keep-all;
 }
+
+.intro-para {
+  font-size: 16px;
+  line-height: 1.65;
+  color: var(--text-soft);
+  margin: 0;
+}
+
+.intro-para + .intro-para { margin-top: 1.1em; }
 
 .section-header {
   display: flex;
