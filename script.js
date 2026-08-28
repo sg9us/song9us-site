@@ -155,7 +155,7 @@ function bigCard(p) {
 }
 
 // ===== AI Video 카드 =====
-function avCard(p) {
+function avCard(p, eager = false) {
   const is916 = p.subtype === '9:16';
   const pending = !p.link;
   const card = document.createElement('div');
@@ -163,7 +163,7 @@ function avCard(p) {
 
   card.innerHTML = `
     <div class="${is916 ? 'av-thumb-916' : 'av-thumb-169'}">
-      ${thumbHTML(p, is916 ? { w: '9', h: '16' } : { w: '16', h: '9' })}
+      ${thumbHTML(p, is916 ? { eager, w: '9', h: '16' } : { eager, w: '16', h: '9' })}
       ${pending ? '<span class="badge-pending">준비중</span>' : ''}
     </div>
     <div class="av-info">
@@ -277,15 +277,15 @@ function renderHome() {
   av.className = 'av-sections';
   const av916 = avList.filter(p => p.subtype === '9:16');
   const av169 = avList.filter(p => p.subtype !== '9:16');
-  const makeAvRow = (items, gridClass, limit) => {
+  const makeAvRow = (items, gridClass, limit, eager = false) => {
     if (!items.length) return;
     const row = document.createElement('div');
     row.className = gridClass;
-    items.slice(0, limit).forEach(p => row.appendChild(avCard(p)));
+    items.slice(0, limit).forEach(p => row.appendChild(avCard(p, eager)));
     av.appendChild(row);
   };
-  makeAvRow(av916, 'av-grid-916-home', 6); // 홈 전용 6열 그리드
-  makeAvRow(av169, 'av-grid-169', 4);
+  makeAvRow(av916, 'av-grid-916-home', 6, true); // 홈 전용 6열 그리드
+  makeAvRow(av169, 'av-grid-169', 4, true);
 
   // Branding: brandingCard 재사용
   br.className = 'branding-grid';

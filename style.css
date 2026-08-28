@@ -102,9 +102,9 @@ nav.scrolled { border-bottom-color: var(--border); }
 /* ===== Works 섹션 (홈) ===== */
 .section { padding: 100px 60px; }
 
-.section-works { padding-top: 48px; }
+.section-works { padding-top: 32px; }
 
-.section-works-first { padding-top: 48px; padding-bottom: 48px; }
+.section-works-first { padding-top: 32px; padding-bottom: 32px; }
 
 /* 인트로 섹션: 네비게이션 높이(~64px) 아래에서 시작 */
 .section-intro {
@@ -159,8 +159,8 @@ nav.scrolled { border-bottom-color: var(--border); }
 /* ===== 홈 프로젝트 그리드 ===== */
 .project-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 48px 36px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px 20px;
 }
 
 .project-card { cursor: pointer; display: block; }
@@ -373,7 +373,7 @@ body.dark .tag-branding { color: #fcd34d; }
 .article-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 60px 36px;
+  gap: 24px 20px;
 }
 
 /* ===== Branding 카테고리 ===== */
@@ -665,14 +665,14 @@ footer p { font-size: 13px; color: var(--gray); }
   .section-intro { padding-top: 96px; padding-bottom: 48px; }
   .intro-text { max-width: 100%; }
   .section-works-first { padding-top: 48px; padding-bottom: 48px; }
-  .project-grid { grid-template-columns: 1fr; gap: 36px; }
+  .project-grid { grid-template-columns: 1fr; gap: 24px; }
   #view-category { padding: 110px 24px 80px; }
   .category-title { font-size: 30px; }
   .big-grid { grid-template-columns: 1fr; gap: 48px; }
   .av-grid-169 { grid-template-columns: 1fr; gap: 40px; }
   .av-grid-916 { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 14px; }
   .av-grid-916-home { grid-template-columns: repeat(3, 1fr); gap: 14px; }
-  .article-grid { grid-template-columns: 1fr; gap: 36px; }
+  .article-grid { grid-template-columns: 1fr; gap: 24px; }
   .branding-grid { grid-template-columns: repeat(2, 1fr); gap: 32px 20px; }
   .lb-prev { left: 8px; }
   .lb-next { right: 8px; }
