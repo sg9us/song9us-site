@@ -383,6 +383,10 @@ const lbNext = lb.querySelector('.lb-next');
 const lbBackdrop = lb.querySelector('.lb-backdrop');
 const lbClose = lb.querySelector('.lb-close');
 
+function gtag_event(name, params) {
+  if (typeof gtag === 'function') gtag('event', name, params);
+}
+
 function openLightbox(projectId) {
   const p = PROJECTS.find(x => x.id === projectId);
   if (!p) return;
@@ -400,6 +404,7 @@ function openLightbox(projectId) {
       lbIframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
       lb.hidden = false;
       document.body.style.overflow = 'hidden';
+      gtag_event('video_play', { project_id: p.id, project_title: p.title });
     }
     return;
   }
@@ -414,6 +419,7 @@ function openLightbox(projectId) {
   showSlide(0);
   lb.hidden = false;
   document.body.style.overflow = 'hidden';
+  gtag_event('project_view', { project_id: p.id, project_title: p.title, project_category: p.category });
 }
 
 function closeLightbox() {
@@ -422,7 +428,8 @@ function closeLightbox() {
   lbIframe.src = '';  // 영상 재생 중단
 }
 
-function showSlide(i) {
+function showSlide(i, isNav = false) {
+  if (isNav) gtag_event('lightbox_navigate', { slide_index: i + 1, total_slides: lbImages.length });
   lbIndex = i;
   lbImg.src = lbImages[i];
   lbCounter.textContent = `${i + 1} / ${lbImages.length}`;
@@ -432,14 +439,14 @@ function showSlide(i) {
 
 lbBackdrop.addEventListener('click', closeLightbox);
 lbClose.addEventListener('click', closeLightbox);
-lbPrev.addEventListener('click', () => { if (lbIndex > 0) showSlide(lbIndex - 1); });
-lbNext.addEventListener('click', () => { if (lbIndex < lbImages.length - 1) showSlide(lbIndex + 1); });
+lbPrev.addEventListener('click', () => { if (lbIndex > 0) showSlide(lbIndex - 1, true); });
+lbNext.addEventListener('click', () => { if (lbIndex < lbImages.length - 1) showSlide(lbIndex + 1, true); });
 
 document.addEventListener('keydown', e => {
   if (lb.hidden) return;
   if (e.key === 'Escape') closeLightbox();
-  if (e.key === 'ArrowLeft' && lbIndex > 0) showSlide(lbIndex - 1);
-  if (e.key === 'ArrowRight' && lbIndex < lbImages.length - 1) showSlide(lbIndex + 1);
+  if (e.key === 'ArrowLeft' && lbIndex > 0) showSlide(lbIndex - 1, true);
+  if (e.key === 'ArrowRight' && lbIndex < lbImages.length - 1) showSlide(lbIndex + 1, true);
 });
 
 lb.addEventListener('touchstart', e => { lbTouchStartX = e.touches[0].clientX; }, { passive: true });
@@ -447,8 +454,8 @@ lb.addEventListener('touchend', e => {
   if (!lbVideoWrap.hidden) return; // 영상 재생 중 스와이프 무시
   const dx = e.changedTouches[0].clientX - lbTouchStartX;
   if (Math.abs(dx) < 40) return;
-  if (dx < 0 && lbIndex < lbImages.length - 1) showSlide(lbIndex + 1);
-  if (dx > 0 && lbIndex > 0) showSlide(lbIndex - 1);
+  if (dx < 0 && lbIndex < lbImages.length - 1) showSlide(lbIndex + 1, true);
+  if (dx > 0 && lbIndex > 0) showSlide(lbIndex - 1, true);
 }, { passive: true });
 
 // ===== 등장 애니메이션 =====
