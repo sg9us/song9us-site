@@ -2,15 +2,6 @@
 // desc: 카드 설명 문구, 추후 UI 노출 예정, 현재는 렌더링 미사용
 const PROJECTS = [
   {
-    id: 'content-review',
-    category: 'uiux',
-    title: '검수 과정 3단계 단축하고 반복해서 사용성 검증하기',
-    tags: ['실무 프로젝트'],
-    period: '2023/05/01 → 2023/07/01',
-    desc: '\'AI 디지털 교과서\'에 사용되는 콘텐츠 카드의 메타데이터, 기능, 디자인 검수를 위한 인터널 프로덕트 제작.',
-    images: ['images/uiux/content-review/cover.jpg'],
-  },
-  {
     id: 'meetup-flow',
     category: 'uiux',
     title: '모임 서비스 신청&개설 Flow UX 개선',
@@ -18,21 +9,6 @@ const PROJECTS = [
     period: '2024/09/01 → 2024/10/01',
     desc: '프로젝트 상세 설명을 여기에 입력하세요.',
     images: ['images/uiux/meetup-flow/cover.jpg'],
-  },
-  {
-    id: 'learnify',
-    category: 'uiux',
-    title: '500만명의 학생을 위한 500만개의 AI 교과서, 러니파이',
-    tags: ['PC web', '실무 프로젝트'],
-    period: '2023/10/01 → 2024/06/01',
-    desc: '프로젝트 상세 설명을 여기에 입력하세요.',
-    images: [
-      'images/uiux/learnify/01.jpg',
-      'images/uiux/learnify/02.jpg',
-      'images/uiux/learnify/03.jpg',
-      'images/uiux/learnify/04.jpg',
-      'images/uiux/learnify/05.jpg',
-    ],
   },
   {
     id: 'retention',
