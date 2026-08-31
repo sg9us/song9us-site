@@ -9,7 +9,7 @@ import sharp from 'sharp';
 const NOTION_TOKEN = process.env.NOTION_TOKEN;
 const DATABASE_ID = process.env.NOTION_DATABASE_ID;
 const CAREER_FEED_DATABASE_ID = process.env.CAREER_FEED_DATABASE_ID;
-const NOTION_VERSION = '2022-06-28';
+const NOTION_VERSION = '2025-09-03';
 const ROOT = path.resolve(import.meta.dirname, '..');
 
 // 기존 이미지 폴더 보호: 제목(또는 제목 변형)→slug 고정 매핑.
@@ -79,12 +79,21 @@ async function notionFetch(url, options = {}) {
   return res.json();
 }
 
-async function queryAllRows() {
+// 데이터베이스의 data_source ID 목록 반환 (2025-09-03 API 필수)
+async function getDataSourceIds(databaseId) {
+  const data = await notionFetch(`https://api.notion.com/v1/databases/${databaseId}`);
+  const sources = data.data_sources || [];
+  if (!sources.length) throw new Error(`data_sources 없음: ${databaseId}`);
+  return sources.map(s => s.id);
+}
+
+// data_sources 엔드포인트로 모든 행 조회 (다중 소스 지원)
+async function queryDataSource(sourceId) {
   const rows = [];
   let cursor;
   do {
     const body = cursor ? { start_cursor: cursor, page_size: 100 } : { page_size: 100 };
-    const data = await notionFetch(`https://api.notion.com/v1/databases/${DATABASE_ID}/query`, {
+    const data = await notionFetch(`https://api.notion.com/v1/data_sources/${sourceId}/query`, {
       method: 'POST',
       body: JSON.stringify(body),
     });
@@ -92,6 +101,13 @@ async function queryAllRows() {
     cursor = data.has_more ? data.next_cursor : undefined;
   } while (cursor);
   return rows;
+}
+
+async function queryAllRows() {
+  const sourceIds = await getDataSourceIds(DATABASE_ID);
+  const all = [];
+  for (const id of sourceIds) all.push(...await queryDataSource(id));
+  return all;
 }
 
 // 페이지 본문의 이미지 블록 URL을 순서대로 모두 반환
@@ -160,17 +176,9 @@ async function fetchCareerFeedItems() {
   }
 
   console.log('[career-feed] 커리어 피드 DB 조회 중...');
+  const cfSourceIds = await getDataSourceIds(CAREER_FEED_DATABASE_ID);
   const rows = [];
-  let cursor;
-  do {
-    const body = cursor ? { start_cursor: cursor, page_size: 100 } : { page_size: 100 };
-    const data = await notionFetch(
-      `https://api.notion.com/v1/databases/${CAREER_FEED_DATABASE_ID}/query`,
-      { method: 'POST', body: JSON.stringify(body) }
-    );
-    rows.push(...data.results);
-    cursor = data.has_more ? data.next_cursor : undefined;
-  } while (cursor);
+  for (const id of cfSourceIds) rows.push(...await queryDataSource(id));
 
   const items = [];
   for (const row of rows) {
