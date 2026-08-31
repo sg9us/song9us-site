@@ -176,7 +176,14 @@ async function fetchCareerFeedItems() {
   }
 
   console.log('[career-feed] 커리어 피드 DB 조회 중...');
-  const cfSourceIds = await getDataSourceIds(CAREER_FEED_DATABASE_ID);
+  let cfSourceIds;
+  try {
+    cfSourceIds = await getDataSourceIds(CAREER_FEED_DATABASE_ID);
+    console.log(`[career-feed] data_source IDs: ${cfSourceIds.join(', ')}`);
+  } catch (err) {
+    console.warn(`[career-feed] data_source 조회 실패 — DB ID를 직접 data_source로 시도: ${err.message}`);
+    cfSourceIds = [CAREER_FEED_DATABASE_ID];
+  }
   const rows = [];
   for (const id of cfSourceIds) rows.push(...await queryDataSource(id));
 
