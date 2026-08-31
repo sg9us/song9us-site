@@ -348,6 +348,16 @@ const views = {
 
 function showView(name) {
   Object.entries(views).forEach(([k, el]) => { el.hidden = (k !== name); });
+
+  // Career 탭: 라이트모드 강제 + 토글 숨김 / 그 외: 저장된 테마 복귀 + 토글 표시
+  const toggle = document.getElementById('themeToggle');
+  if (name === 'career') {
+    document.body.classList.remove('dark');
+    if (toggle) { toggle.hidden = true; toggle.querySelector('.theme-icon').textContent = '🌙'; }
+  } else {
+    applyTheme(localStorage.getItem('theme') || 'dark');
+    if (toggle) toggle.hidden = false;
+  }
 }
 
 function route() {
