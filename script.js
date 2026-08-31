@@ -370,6 +370,7 @@ function route() {
 
   if (hash === 'career') {
     showView('career');
+    renderCareerFeed();
     window.scrollTo(0, 0);
     return;
   }
@@ -466,6 +467,13 @@ lbPrev.addEventListener('click', () => { if (lbIndex > 0) showSlide(lbIndex - 1,
 lbNext.addEventListener('click', () => { if (lbIndex < lbImages.length - 1) showSlide(lbIndex + 1, true); });
 
 document.addEventListener('keydown', e => {
+  const cfModal = document.getElementById('cfModal');
+  if (!cfModal.hidden) {
+    if (e.key === 'Escape') closeCfModal();
+    if (e.key === 'ArrowLeft') showCfImage(cfImgIndex - 1);
+    if (e.key === 'ArrowRight') showCfImage(cfImgIndex + 1);
+    return;
+  }
   if (lb.hidden) return;
   if (e.key === 'Escape') closeLightbox();
   if (e.key === 'ArrowLeft' && lbIndex > 0) showSlide(lbIndex - 1, true);
@@ -564,6 +572,73 @@ if (contactForm) {
     }
   });
 }
+
+// ===== 커리어 피드 =====
+let cfImages = [];
+let cfImgIndex = 0;
+let cfTouchStartX = 0;
+
+function renderCareerFeed() {
+  const grid = document.getElementById('careerFeedGrid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  const feed = window.CAREER_FEED || [];
+  if (!feed.length) return;
+  feed.forEach(item => {
+    const card = document.createElement('div');
+    card.className = 'cf-card';
+    const cover = item.images?.[0] || '';
+    card.innerHTML = `<div class="cf-thumb">${cover
+      ? `<img src="${cover}" alt="${item.title}" loading="lazy" />`
+      : ''}</div>`;
+    card.addEventListener('click', () => openCfModal(item));
+    grid.appendChild(card);
+  });
+}
+
+function openCfModal(item) {
+  cfImages = item.images || [];
+  cfImgIndex = 0;
+  const modal = document.getElementById('cfModal');
+  modal.querySelector('.cf-modal-date').textContent =
+    item.date ? item.date.replaceAll('-', '.') : '';
+  modal.querySelector('.cf-modal-title').textContent = item.title;
+  modal.querySelector('.cf-modal-text').textContent = item.body || '';
+  const imagesWrap = modal.querySelector('.cf-modal-images');
+  imagesWrap.hidden = !cfImages.length;
+  if (cfImages.length) showCfImage(0);
+  modal.querySelector('.cf-img-prev').hidden = cfImages.length <= 1;
+  modal.querySelector('.cf-img-next').hidden = cfImages.length <= 1;
+  modal.hidden = false;
+  document.body.style.overflow = 'hidden';
+}
+
+function showCfImage(idx) {
+  if (!cfImages.length) return;
+  cfImgIndex = ((idx % cfImages.length) + cfImages.length) % cfImages.length;
+  document.querySelector('.cf-modal-img').src = cfImages[cfImgIndex];
+  const counter = document.querySelector('.cf-img-counter');
+  counter.textContent = cfImages.length > 1 ? `${cfImgIndex + 1} / ${cfImages.length}` : '';
+}
+
+function closeCfModal() {
+  document.getElementById('cfModal').hidden = true;
+  document.body.style.overflow = '';
+}
+
+(function initCfModal() {
+  const modal = document.getElementById('cfModal');
+  modal.querySelector('.cf-backdrop').addEventListener('click', closeCfModal);
+  modal.querySelector('.cf-close').addEventListener('click', closeCfModal);
+  modal.querySelector('.cf-img-prev').addEventListener('click', () => showCfImage(cfImgIndex - 1));
+  modal.querySelector('.cf-img-next').addEventListener('click', () => showCfImage(cfImgIndex + 1));
+  modal.addEventListener('touchstart', e => { cfTouchStartX = e.touches[0].clientX; }, { passive: true });
+  modal.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - cfTouchStartX;
+    if (Math.abs(dx) < 40) return;
+    showCfImage(dx < 0 ? cfImgIndex + 1 : cfImgIndex - 1);
+  }, { passive: true });
+})();
 
 // ===== 초기화 =====
 renderHome();

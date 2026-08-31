@@ -8,6 +8,7 @@ import sharp from 'sharp';
 
 const NOTION_TOKEN = process.env.NOTION_TOKEN;
 const DATABASE_ID = process.env.NOTION_DATABASE_ID;
+const CAREER_FEED_DATABASE_ID = process.env.CAREER_FEED_DATABASE_ID;
 const NOTION_VERSION = '2022-06-28';
 const ROOT = path.resolve(import.meta.dirname, '..');
 
@@ -151,6 +152,63 @@ async function saveYouTubeThumbnail(slug, videoId, category) {
   return null;
 }
 
+// ===== 커리어 피드 =====
+async function fetchCareerFeedItems() {
+  if (!CAREER_FEED_DATABASE_ID) {
+    console.log('[career-feed] CAREER_FEED_DATABASE_ID 없음 — 스킵');
+    return [];
+  }
+
+  console.log('[career-feed] 커리어 피드 DB 조회 중...');
+  const rows = [];
+  let cursor;
+  do {
+    const body = cursor ? { start_cursor: cursor, page_size: 100 } : { page_size: 100 };
+    const data = await notionFetch(
+      `https://api.notion.com/v1/databases/${CAREER_FEED_DATABASE_ID}/query`,
+      { method: 'POST', body: JSON.stringify(body) }
+    );
+    rows.push(...data.results);
+    cursor = data.has_more ? data.next_cursor : undefined;
+  } while (cursor);
+
+  const items = [];
+  for (const row of rows) {
+    const props = row.properties;
+
+    // 게시 체크박스 확인 — false이면 스킵
+    if (props['게시']?.checkbox === false) continue;
+
+    const title = (props['제목']?.title || []).map(t => t.plain_text).join('');
+    if (!title) continue;
+
+    const date = props['날짜']?.date?.start || '';
+    const body = (props['본문']?.rich_text || []).map(t => t.plain_text).join('');
+
+    // 슬러그: 날짜-pageId 뒤 8자
+    const hex = row.id.replace(/-/g, '');
+    const slug = date ? `${date}-${hex.slice(-8)}` : hex.slice(-10);
+
+    let images = [];
+    try {
+      const imageUrls = await findAllImageUrls(row.id);
+      if (imageUrls.length) {
+        images = await saveImages(slug, imageUrls, 'career-feed');
+        console.log(`[career-feed] ${slug}: 이미지 ${images.length}장 저장`);
+      }
+    } catch (err) {
+      console.warn(`[career-feed] ${slug}: 이미지 처리 실패 — ${err.message}`);
+    }
+
+    items.push({ slug, title, date, body, images });
+  }
+
+  // 날짜 최신순 정렬
+  items.sort((a, b) => (b.date > a.date ? 1 : b.date < a.date ? -1 : 0));
+  console.log(`[career-feed] 완료 — ${items.length}개 항목`);
+  return items;
+}
+
 async function main() {
   if (!NOTION_TOKEN || !DATABASE_ID) {
     console.log('[notion-sync] NOTION_TOKEN / NOTION_DATABASE_ID 없음 — 동기화 스킵, 기존 데이터로 빌드 계속');
@@ -237,8 +295,12 @@ async function main() {
     overrides[slug] = { title, tags, period, category, subtype, link, images };
   }
 
+  const careerFeed = await fetchCareerFeedItems();
+
   await mkdir(path.join(ROOT, 'data'), { recursive: true });
-  const js = `window.NOTION_OVERRIDES = ${JSON.stringify(overrides, null, 2)};\n`;
+  const js =
+    `window.NOTION_OVERRIDES = ${JSON.stringify(overrides, null, 2)};\n` +
+    `window.CAREER_FEED = ${JSON.stringify(careerFeed, null, 2)};\n`;
   await writeFile(path.join(ROOT, 'data', 'notion-data.js'), js);
   console.log(`[notion-sync] 완료 — ${Object.keys(overrides).length}개 프로젝트 동기화`);
 }
