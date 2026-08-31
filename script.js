@@ -349,14 +349,12 @@ const views = {
 function showView(name) {
   Object.entries(views).forEach(([k, el]) => { el.hidden = (k !== name); });
 
-  // Career 탭: 라이트모드 강제 + 토글 숨김 / 그 외: 저장된 테마 복귀 + 토글 표시
-  const toggle = document.getElementById('themeToggle');
+  // Career: 라이트 강제(localStorage 무변경). 그 외: 저장 테마 복귀(기본 dark)
   if (name === 'career') {
     document.body.classList.remove('dark');
-    if (toggle) { toggle.hidden = true; toggle.querySelector('.theme-icon').textContent = '🌙'; }
+    themeIcon.textContent = '🌙';
   } else {
     applyTheme(localStorage.getItem('theme') || 'dark');
-    if (toggle) toggle.hidden = false;
   }
 }
 
@@ -517,7 +515,8 @@ applyTheme(localStorage.getItem('theme') || 'dark');
 
 themeToggle.addEventListener('click', () => {
   const next = document.body.classList.contains('dark') ? 'light' : 'dark';
-  localStorage.setItem('theme', next);
+  // Career 탭 안에서의 토글은 임시(전역 저장값 유지)
+  if (views.career.hidden) localStorage.setItem('theme', next);
   applyTheme(next);
 });
 
