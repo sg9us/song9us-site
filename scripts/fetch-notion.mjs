@@ -201,9 +201,11 @@ async function fetchCareerFeedItems() {
       continue;
     }
 
-    const title = (props['제목']?.title || []).map(t => t.plain_text).join('');
+    // title 타입 속성을 이름에 무관하게 자동으로 찾음 (이름·제목·Name 등 대응)
+    const titleProp = Object.values(props).find(p => p.type === 'title');
+    const title = (titleProp?.title || []).map(t => t.plain_text).join('');
     if (!title) {
-      console.log(`[career-feed] 스킵 (제목 없음): ${row.id}, props: ${Object.keys(props).join(', ')}`);
+      console.log(`[career-feed] 스킵 (title 속성 없음): ${row.id}`);
       continue;
     }
 
