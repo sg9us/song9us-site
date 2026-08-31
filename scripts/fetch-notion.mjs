@@ -186,28 +186,17 @@ async function fetchCareerFeedItems() {
   }
   const rows = [];
   for (const id of cfSourceIds) rows.push(...await queryDataSource(id));
-  console.log(`[career-feed] 조회된 행: ${rows.length}개`);
-  if (rows.length > 0) {
-    console.log(`[career-feed] 첫 행 속성명: ${Object.keys(rows[0].properties).join(', ')}`);
-  }
 
   const items = [];
   for (const row of rows) {
     const props = row.properties;
 
-    // 게시 체크박스 확인 — false이면 스킵
-    if (props['게시']?.checkbox === false) {
-      console.log(`[career-feed] 스킵 (게시=false): ${row.id}`);
-      continue;
-    }
+    if (props['게시']?.checkbox === false) continue;
 
     // title 타입 속성을 이름에 무관하게 자동으로 찾음 (이름·제목·Name 등 대응)
     const titleProp = Object.values(props).find(p => p.type === 'title');
     const title = (titleProp?.title || []).map(t => t.plain_text).join('');
-    if (!title) {
-      console.log(`[career-feed] 스킵 (title 속성 없음): ${row.id}`);
-      continue;
-    }
+    if (!title) continue;
 
     const date = props['날짜']?.date?.start || '';
     const body = (props['본문']?.rich_text || []).map(t => t.plain_text).join('');
