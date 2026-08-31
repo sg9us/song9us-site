@@ -343,6 +343,7 @@ function renderCategory(category) {
 const views = {
   home: document.getElementById('view-home'),
   category: document.getElementById('view-category'),
+  career: document.getElementById('view-career'),
 };
 
 function showView(name) {
@@ -355,6 +356,12 @@ function route() {
   if (hash === 'uiux' || hash === 'aivideo' || hash === 'branding' || hash === 'article') {
     showView('category');
     renderCategory(hash);
+    window.scrollTo(0, 0);
+    return;
+  }
+
+  if (hash === 'career') {
+    showView('career');
     window.scrollTo(0, 0);
     return;
   }
