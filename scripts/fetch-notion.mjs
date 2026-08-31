@@ -303,7 +303,12 @@ async function main() {
     overrides[slug] = { title, tags, period, category, subtype, link, images };
   }
 
-  const careerFeed = await fetchCareerFeedItems();
+  let careerFeed = [];
+  try {
+    careerFeed = await fetchCareerFeedItems();
+  } catch (err) {
+    console.warn('[career-feed] 실패 (스킵):', err.message);
+  }
 
   await mkdir(path.join(ROOT, 'data'), { recursive: true });
   const js =
