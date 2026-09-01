@@ -1,6 +1,9 @@
 // 빌드 시 1회 실행: 노션 DB에서 제목/태그/기간/카테고리/링크 + 커버 이미지를 가져와
 // data/notion-data.js와 images/<category>/<slug>/cover.jpg를 생성한다.
 // 환경변수(NOTION_TOKEN, NOTION_DATABASE_ID)가 없으면 조용히 스킵한다.
+//
+// ※ 동기화 주의: extractYouTubeId()가 script.js(브라우저)에도 존재 —
+//   한쪽 정규식 수정 시 반드시 두 파일 함께 변경할 것.
 
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
@@ -44,8 +47,7 @@ function autoSlug(title, pageId, slugsSeen) {
   return base ? `${base}-${hex}` : hex; // 최후 수단: 전체 hex 사용
 }
 
-// YouTube URL → 영상 ID (11자리)
-// 주의: 동일 로직이 script.js에도 있음 — 수정 시 두 파일 함께 변경
+// YouTube URL → 영상 ID (11자리) — 파일 상단 동기화 주의 참고
 function extractYouTubeId(url) {
   if (!url) return null;
   const m = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/);
@@ -176,14 +178,7 @@ async function fetchCareerFeedItems() {
   }
 
   console.log('[career-feed] 커리어 피드 DB 조회 중...');
-  let cfSourceIds;
-  try {
-    cfSourceIds = await getDataSourceIds(CAREER_FEED_DATABASE_ID);
-    console.log(`[career-feed] data_source IDs: ${cfSourceIds.join(', ')}`);
-  } catch (err) {
-    console.warn(`[career-feed] data_source 조회 실패 — DB ID를 직접 data_source로 시도: ${err.message}`);
-    cfSourceIds = [CAREER_FEED_DATABASE_ID];
-  }
+  const cfSourceIds = await getDataSourceIds(CAREER_FEED_DATABASE_ID);
   const rows = [];
   for (const id of cfSourceIds) rows.push(...await queryDataSource(id));
 

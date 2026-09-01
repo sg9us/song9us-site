@@ -369,7 +369,7 @@ body.dark .tag-branding { color: #fcd34d; }
   line-height: 1.4;
 }
 
-/* ===== Article 카테고리 (3열, project-card 재사용) ===== */
+/* ===== Article 카테고리 (4열, project-card 재사용) ===== */
 .article-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -666,7 +666,6 @@ footer p { font-size: 13px; color: var(--gray); }
 .cr-list {
   display: flex;
   flex-direction: column;
-  gap: 0;
 }
 
 .cr-entry {
@@ -828,7 +827,7 @@ footer p { font-size: 13px; color: var(--gray); }
 .cf-thumb {
   width: 100%;
   aspect-ratio: 1;
-  background: var(--thumb-bg, #e8e8e8);
+  background: var(--thumb-bg);
   border-radius: 4px;
   overflow: hidden;
   transition: opacity 0.2s;
@@ -845,35 +844,35 @@ footer p { font-size: 13px; color: var(--gray); }
 .cf-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.6); cursor: pointer; }
 .cf-modal-wrap {
   position: relative; z-index: 1;
-  background: #ffffff; border-radius: 12px;
+  background: var(--bg); border-radius: 12px;
   width: min(90vw, 760px); max-height: 88vh; overflow-y: auto;
 }
 .cf-close {
   position: absolute; top: 16px; right: 20px; z-index: 2;
   background: none; border: none; font-size: 20px;
-  cursor: pointer; color: #888; padding: 4px 8px; line-height: 1;
+  cursor: pointer; color: var(--gray); padding: 4px 8px; line-height: 1;
 }
-.cf-close:hover { color: #111; }
-.cf-modal-images { position: relative; background: #f0f0f0; }
+.cf-close:hover { color: var(--text); }
+.cf-modal-images { position: relative; background: var(--thumb-bg); }
 .cf-img-viewport { width: 100%; aspect-ratio: 1; overflow: hidden; }
 .cf-modal-img { width: 100%; height: 100%; object-fit: contain; display: block; }
 .cf-img-prev, .cf-img-next {
   position: absolute; top: 50%; transform: translateY(-50%);
   background: rgba(255,255,255,0.8); border: none;
   font-size: 28px; cursor: pointer; padding: 8px 14px;
-  border-radius: 6px; line-height: 1; color: #333;
+  border-radius: 6px; line-height: 1; color: var(--text);
 }
 .cf-img-prev { left: 10px; }
 .cf-img-next { right: 10px; }
 .cf-img-counter {
   position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%);
-  font-size: 12px; color: #888; background: rgba(255,255,255,0.75);
+  font-size: 12px; color: var(--gray); background: rgba(255,255,255,0.75);
   padding: 2px 8px; border-radius: 100px;
 }
 .cf-modal-info { padding: 24px 28px; }
-.cf-modal-date { font-size: 13px; color: #888; margin-bottom: 8px; }
+.cf-modal-date { font-size: 13px; color: var(--gray); margin-bottom: 8px; }
 .cf-modal-title {
   font-size: 18px; font-weight: 600; letter-spacing: -0.02em;
-  color: #111; margin-bottom: 16px; line-height: 1.4;
+  color: var(--text); margin-bottom: 16px; line-height: 1.4;
 }
-.cf-modal-text { font-size: 15px; color: #444; line-height: 1.75; white-space: pre-line; }
+.cf-modal-text { font-size: 15px; color: var(--text-soft); line-height: 1.75; white-space: pre-line; }

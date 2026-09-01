@@ -1,3 +1,6 @@
+// ※ 동기화 주의: extractYouTubeId()가 scripts/fetch-notion.mjs에도 존재 —
+//   한쪽 정규식 수정 시 반드시 두 파일 함께 변경할 것.
+
 // ===== 프로젝트 데이터 =====
 // desc: 카드 설명 문구, 추후 UI 노출 예정, 현재는 렌더링 미사용
 const PROJECTS = [
@@ -91,8 +94,7 @@ const TAG_CLASS = {
   '사이드 프로젝트': 'tag-side',
 };
 
-// YouTube URL → 영상 ID (11자리)
-// 주의: 동일 로직이 scripts/fetch-notion.mjs에도 있음 — 수정 시 두 파일 함께 변경
+// YouTube URL → 영상 ID (11자리) — 파일 상단 동기화 주의 참고
 function extractYouTubeId(url) {
   if (!url) return null;
   const m = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/);
@@ -277,15 +279,16 @@ function renderHome() {
   av.className = 'av-sections';
   const av916 = avList.filter(p => p.subtype === '9:16');
   const av169 = avList.filter(p => p.subtype !== '9:16');
-  const makeAvRow = (items, gridClass, limit, eager = false) => {
+  // eagerCount: 뷰포트 안에 들어올 카드 수만큼만 eager, 나머지 lazy
+  const makeAvRow = (items, gridClass, limit, eagerCount = 0) => {
     if (!items.length) return;
     const row = document.createElement('div');
     row.className = gridClass;
-    items.slice(0, limit).forEach(p => row.appendChild(avCard(p, eager)));
+    items.slice(0, limit).forEach((p, i) => row.appendChild(avCard(p, i < eagerCount)));
     av.appendChild(row);
   };
-  makeAvRow(av916, 'av-grid-916-home', 6, true); // 홈 전용 6열 그리드
-  makeAvRow(av169, 'av-grid-169', 4, true);
+  makeAvRow(av916, 'av-grid-916-home', 6, 6); // 9:16: 전부 뷰포트 내 → 전부 eager
+  makeAvRow(av169, 'av-grid-169', 4, 2);      // 16:9: 첫 2장만 eager, 나머지 lazy
 
   // Branding: brandingCard 재사용
   br.className = 'branding-grid';
@@ -452,6 +455,10 @@ function closeLightbox() {
   lbIframe.src = '';  // 영상 재생 중단
 }
 
+function preloadLbImage(i) {
+  if (i >= 0 && i < lbImages.length) new Image().src = lbImages[i];
+}
+
 function showSlide(i, isNav = false) {
   if (isNav) gtag_event('lightbox_navigate', { slide_index: i + 1, total_slides: lbImages.length });
   lbIndex = i;
@@ -459,6 +466,8 @@ function showSlide(i, isNav = false) {
   lbCounter.textContent = `${i + 1} / ${lbImages.length}`;
   lbPrev.disabled = i === 0;
   lbNext.disabled = i === lbImages.length - 1;
+  preloadLbImage(i + 1);
+  preloadLbImage(i - 1);
 }
 
 lbBackdrop.addEventListener('click', closeLightbox);
@@ -467,8 +476,7 @@ lbPrev.addEventListener('click', () => { if (lbIndex > 0) showSlide(lbIndex - 1,
 lbNext.addEventListener('click', () => { if (lbIndex < lbImages.length - 1) showSlide(lbIndex + 1, true); });
 
 document.addEventListener('keydown', e => {
-  const cfModal = document.getElementById('cfModal');
-  if (!cfModal.hidden) {
+  if (!_cfModal.hidden) {
     if (e.key === 'Escape') closeCfModal();
     if (e.key === 'ArrowLeft') showCfImage(cfImgIndex - 1);
     if (e.key === 'ArrowRight') showCfImage(cfImgIndex + 1);
@@ -495,7 +503,7 @@ const observer = new IntersectionObserver((entries) => {
 }, { threshold: 0.08 });
 
 function observeFadeIn(root) {
-  root.querySelectorAll('.project-card, .big-card, .av-card, .branding-card, .about-col, .contact-col').forEach(el => {
+  root.querySelectorAll('.project-card, .big-card, .av-card, .branding-card, .cf-card, .about-col, .contact-col').forEach(el => {
     if (!el.classList.contains('fade-in')) {
       el.classList.add('fade-in');
       observer.observe(el);
@@ -578,10 +586,20 @@ let cfImages = [];
 let cfImgIndex = 0;
 let cfTouchStartX = 0;
 
+// cf 모달 DOM 캐시 — 매 조작마다 querySelector 반복 방지
+const _cfModal    = document.getElementById('cfModal');
+const _cfDate     = _cfModal.querySelector('.cf-modal-date');
+const _cfTitle    = _cfModal.querySelector('.cf-modal-title');
+const _cfText     = _cfModal.querySelector('.cf-modal-text');
+const _cfImgsWrap = _cfModal.querySelector('.cf-modal-images');
+const _cfImg      = _cfModal.querySelector('.cf-modal-img');
+const _cfCounter  = _cfModal.querySelector('.cf-img-counter');
+const _cfPrev     = _cfModal.querySelector('.cf-img-prev');
+const _cfNext     = _cfModal.querySelector('.cf-img-next');
+
 function renderCareerFeed() {
   const grid = document.getElementById('careerFeedGrid');
-  if (!grid) return;
-  grid.innerHTML = '';
+  if (!grid || grid.children.length) return; // 이미 렌더됐으면 스킵
   const feed = window.CAREER_FEED || [];
   if (!feed.length) return;
   feed.forEach(item => {
@@ -594,51 +612,51 @@ function renderCareerFeed() {
     card.addEventListener('click', () => openCfModal(item));
     grid.appendChild(card);
   });
+  observeFadeIn(grid);
 }
 
 function openCfModal(item) {
   cfImages = item.images || [];
   cfImgIndex = 0;
-  const modal = document.getElementById('cfModal');
-  modal.querySelector('.cf-modal-date').textContent =
-    item.date ? item.date.replaceAll('-', '.') : '';
-  modal.querySelector('.cf-modal-title').textContent = item.title;
-  modal.querySelector('.cf-modal-text').textContent = item.body || '';
-  const imagesWrap = modal.querySelector('.cf-modal-images');
-  imagesWrap.hidden = !cfImages.length;
+  _cfDate.textContent  = item.date ? item.date.replaceAll('-', '.') : '';
+  _cfTitle.textContent = item.title;
+  _cfText.textContent  = item.body || '';
+  _cfImgsWrap.hidden   = !cfImages.length;
+  _cfPrev.hidden       = cfImages.length <= 1;
+  _cfNext.hidden       = cfImages.length <= 1;
   if (cfImages.length) showCfImage(0);
-  modal.querySelector('.cf-img-prev').hidden = cfImages.length <= 1;
-  modal.querySelector('.cf-img-next').hidden = cfImages.length <= 1;
-  modal.hidden = false;
+  _cfModal.hidden = false;
   document.body.style.overflow = 'hidden';
 }
 
 function showCfImage(idx) {
   if (!cfImages.length) return;
   cfImgIndex = ((idx % cfImages.length) + cfImages.length) % cfImages.length;
-  document.querySelector('.cf-modal-img').src = cfImages[cfImgIndex];
-  const counter = document.querySelector('.cf-img-counter');
-  counter.textContent = cfImages.length > 1 ? `${cfImgIndex + 1} / ${cfImages.length}` : '';
+  _cfImg.src = cfImages[cfImgIndex];
+  _cfCounter.textContent = cfImages.length > 1 ? `${cfImgIndex + 1} / ${cfImages.length}` : '';
+  // 인접 이미지 프리로드
+  const next = (cfImgIndex + 1) % cfImages.length;
+  const prev = (cfImgIndex - 1 + cfImages.length) % cfImages.length;
+  if (next !== cfImgIndex) new Image().src = cfImages[next];
+  if (prev !== cfImgIndex && prev !== next) new Image().src = cfImages[prev];
 }
 
 function closeCfModal() {
-  document.getElementById('cfModal').hidden = true;
+  _cfModal.hidden = true;
   document.body.style.overflow = '';
 }
 
-(function initCfModal() {
-  const modal = document.getElementById('cfModal');
-  modal.querySelector('.cf-backdrop').addEventListener('click', closeCfModal);
-  modal.querySelector('.cf-close').addEventListener('click', closeCfModal);
-  modal.querySelector('.cf-img-prev').addEventListener('click', () => showCfImage(cfImgIndex - 1));
-  modal.querySelector('.cf-img-next').addEventListener('click', () => showCfImage(cfImgIndex + 1));
-  modal.addEventListener('touchstart', e => { cfTouchStartX = e.touches[0].clientX; }, { passive: true });
-  modal.addEventListener('touchend', e => {
-    const dx = e.changedTouches[0].clientX - cfTouchStartX;
-    if (Math.abs(dx) < 40) return;
-    showCfImage(dx < 0 ? cfImgIndex + 1 : cfImgIndex - 1);
-  }, { passive: true });
-})();
+// cf 모달 이벤트 바인딩
+_cfModal.querySelector('.cf-backdrop').addEventListener('click', closeCfModal);
+_cfModal.querySelector('.cf-close').addEventListener('click', closeCfModal);
+_cfPrev.addEventListener('click', () => showCfImage(cfImgIndex - 1));
+_cfNext.addEventListener('click', () => showCfImage(cfImgIndex + 1));
+_cfModal.addEventListener('touchstart', e => { cfTouchStartX = e.touches[0].clientX; }, { passive: true });
+_cfModal.addEventListener('touchend', e => {
+  const dx = e.changedTouches[0].clientX - cfTouchStartX;
+  if (Math.abs(dx) < 40) return;
+  showCfImage(dx < 0 ? cfImgIndex + 1 : cfImgIndex - 1);
+}, { passive: true });
 
 // ===== 초기화 =====
 renderHome();
