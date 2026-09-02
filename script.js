@@ -82,7 +82,7 @@ if (typeof NOTION_OVERRIDES !== 'undefined') {
   });
 }
 
-const CATEGORY_LABEL = { uiux: 'UI/UX', aivideo: 'AI Video', branding: 'Branding', article: 'Article' };
+const CATEGORY_LABEL = { uiux: 'UI/UX', aivideo: 'AI Video', branding: 'Branding', article: 'Article', marketing: 'Marketing' };
 
 const TAG_CLASS = {
   'PC web': 'tag-pcweb',
@@ -230,6 +230,24 @@ function articleCard(p, eager = false) {
   return card;
 }
 
+// ===== Marketing 카드: bigCard 레이아웃 + 링크 → 새 탭 / 없으면 라이트박스 =====
+function marketingBigCard(p) {
+  const card = document.createElement('div');
+  card.className = 'big-card';
+  card.innerHTML = `
+    <div class="big-thumb">${thumbHTML(p, { w: '16', h: '9' })}</div>
+    <div class="big-info">
+      <h3 class="big-name">${p.title}</h3>
+      <div class="card-tags">${tagsHTML(p.tags)}</div>
+      ${p.period ? `<p class="project-period">${p.period}</p>` : ''}
+    </div>`;
+  card.addEventListener('click', () => {
+    if (p.link) window.open(p.link, '_blank', 'noopener,noreferrer');
+    else openLightbox(p.id);
+  });
+  return card;
+}
+
 // ===== Branding 카드 (1:1) =====
 function brandingCard(p) {
   const card = document.createElement('div');
@@ -251,26 +269,30 @@ function renderHome() {
   const av = document.getElementById('homeAivideo');
   const br = document.getElementById('homeBranding');
   const ar = document.getElementById('homeArticle');
+  const mk = document.getElementById('homeMarketing');
   ui.innerHTML = '';
   av.innerHTML = '';
   br.innerHTML = '';
   ar.innerHTML = '';
+  mk.innerHTML = '';
 
   // 카테고리별 목록 (정렬 포함) — 이후 length와 slice 모두 이 변수에서 파생
   const uiList = projectsOf('uiux');
   const avList = projectsOf('aivideo');
   const brList = projectsOf('branding');
   const arList = projectsOf('article');
+  const mkList = projectsOf('marketing');
 
   // 섹션 타이틀에 총 프로젝트 개수 표시
   const setCount = (id, label, count) => {
     document.getElementById(id).innerHTML =
       `${label}<span class="works-count"> · ${count}</span>`;
   };
-  setCount('titleUiux',     'UI/UX',    uiList.length);
-  setCount('titleAivideo',  'AI Video', avList.length);
-  setCount('titleBranding', 'Branding', brList.length);
-  setCount('titleArticle',  'Article',  arList.length);
+  setCount('titleUiux',      'UI/UX',     uiList.length);
+  setCount('titleAivideo',   'AI Video',  avList.length);
+  setCount('titleBranding',  'Branding',  brList.length);
+  setCount('titleArticle',   'Article',   arList.length);
+  setCount('titleMarketing', 'Marketing', mkList.length);
 
   // UI/UX: 첫 번째 카드는 eager 로딩(뷰포트 최초 노출)
   uiList.slice(0, 4).forEach((p, i) => ui.appendChild(homeCard(p, i === 0)));
@@ -296,6 +318,9 @@ function renderHome() {
 
   // Article: articleCard 재사용 (링크 있으면 새 탭, 없으면 라이트박스)
   arList.slice(0, 4).forEach(p => ar.appendChild(articleCard(p)));
+
+  // Marketing: articleCard 비주얼 재사용 (링크 있으면 새 탭, 없으면 라이트박스)
+  mkList.slice(0, 4).forEach(p => mk.appendChild(articleCard(p)));
 
   observeFadeIn(document.getElementById('view-home'));
 }
@@ -334,6 +359,9 @@ function renderCategory(category) {
   } else if (category === 'article') {
     grid.className = 'article-grid';
     list.forEach(p => grid.appendChild(articleCard(p)));
+  } else if (category === 'marketing') {
+    grid.className = 'big-grid';
+    list.forEach(p => grid.appendChild(marketingBigCard(p)));
   } else {
     grid.className = 'big-grid';
     list.forEach(p => grid.appendChild(bigCard(p)));
@@ -364,7 +392,7 @@ function showView(name) {
 function route() {
   const hash = location.hash.slice(1);
 
-  if (hash === 'uiux' || hash === 'aivideo' || hash === 'branding' || hash === 'article') {
+  if (hash === 'uiux' || hash === 'aivideo' || hash === 'branding' || hash === 'article' || hash === 'marketing') {
     showView('category');
     renderCategory(hash);
     window.scrollTo(0, 0);

@@ -251,6 +251,7 @@ async function main() {
     else if (categoryVal === 'AI Video 9:16') { category = 'aivideo'; subtype = '9:16'; }
     else if (categoryVal === 'Branding')      { category = 'branding'; }
     else if (categoryVal === 'Article')       { category = 'article'; }
+    else if (categoryVal === 'Marketing')     { category = 'marketing'; }
     else {
       console.warn(`[notion-sync] "${title}": 알 수 없는 category 값 "${categoryVal}" — 스킵`);
       continue;

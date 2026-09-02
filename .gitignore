@@ -3,3 +3,4 @@
 .vercel
 node_modules
 data/notion-data.js
+.env*
