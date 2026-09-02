@@ -82,7 +82,7 @@ if (typeof NOTION_OVERRIDES !== 'undefined') {
   });
 }
 
-const CATEGORY_LABEL = { uiux: 'UI/UX', aivideo: 'AI Video', branding: 'Branding', article: 'Article', marketing: 'Marketing' };
+const CATEGORY_LABEL = { uiux: 'Product', aivideo: 'AI Video', branding: 'Branding', article: 'Article', marketing: 'Marketing' };
 
 const TAG_CLASS = {
   'PC web': 'tag-pcweb',
@@ -288,7 +288,7 @@ function renderHome() {
     document.getElementById(id).innerHTML =
       `${label}<span class="works-count"> · ${count}</span>`;
   };
-  setCount('titleUiux',      'UI/UX',     uiList.length);
+  setCount('titleUiux',      'Product',   uiList.length);
   setCount('titleAivideo',   'AI Video',  avList.length);
   setCount('titleBranding',  'Branding',  brList.length);
   setCount('titleArticle',   'Article',   arList.length);

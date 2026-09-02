@@ -246,7 +246,7 @@ async function main() {
     // category select 먼저 확인 — 매핑 불가 시 스킵
     const categoryVal = props['category']?.select?.name || '';
     let category, subtype = null;
-    if (categoryVal === 'UXUI')               { category = 'uiux'; }
+    if (categoryVal === 'Product')             { category = 'uiux'; }
     else if (categoryVal === 'AI Video 16:9') { category = 'aivideo'; subtype = '16:9'; }
     else if (categoryVal === 'AI Video 9:16') { category = 'aivideo'; subtype = '9:16'; }
     else if (categoryVal === 'Branding')      { category = 'branding'; }
