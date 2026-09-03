@@ -231,10 +231,20 @@ async function main() {
   const overrides = {};
   const slugsSeen = new Set();
 
+  let _debuggedProps = false;
   for (const row of rows) {
     const props = row.properties;
     const title = (props['이름']?.title || []).map(t => t.plain_text).join('');
     if (!title) continue;
+    if (!_debuggedProps) {
+      _debuggedProps = true;
+      const keys = Object.keys(props);
+      console.log('[DEBUG] props keys:', JSON.stringify(keys));
+      keys.forEach(k => {
+        const hex = [...k].map(c => c.codePointAt(0).toString(16).padStart(4,'0')).join(' ');
+        console.log(`[DEBUG] key "${k}" = U+${hex}, type=${props[k]?.type}`);
+      });
+    }
 
     // "게시" 체크박스 — false이면 제외. 속성 자체가 없거나 값이 null인 기존 항목은 계속 노출
     const published = props['게시']?.checkbox;
