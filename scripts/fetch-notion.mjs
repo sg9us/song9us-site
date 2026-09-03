@@ -230,6 +230,7 @@ async function main() {
   const rows = await queryAllRows();
   const overrides = {};
   const slugsSeen = new Set();
+  const unpublished = new Set();
 
   for (const row of rows) {
     const props = row.properties;
@@ -239,6 +240,8 @@ async function main() {
     // "게시" 체크박스 — false이면 제외. 속성 자체가 없거나 값이 null인 기존 항목은 계속 노출
     const published = props['게시']?.checkbox;
     if (published === false) {
+      // slug를 기록해서 하드코딩 PROJECTS 배열에서도 숨길 수 있게 함
+      unpublished.add(LEGACY_SLUGS[title] || autoSlug(title, row.id, new Set()));
       console.log(`[notion-sync] "${title}": 게시 미체크 — 스킵`);
       continue;
     }
@@ -317,6 +320,7 @@ async function main() {
   await mkdir(path.join(ROOT, 'data'), { recursive: true });
   const js =
     `window.NOTION_OVERRIDES = ${JSON.stringify(overrides, null, 2)};\n` +
+    `window.UNPUBLISHED_SLUGS = ${JSON.stringify([...unpublished])};\n` +
     `window.CAREER_FEED = ${JSON.stringify(careerFeed, null, 2)};\n`;
   await writeFile(path.join(ROOT, 'data', 'notion-data.js'), js);
   console.log(`[notion-sync] 완료 — ${Object.keys(overrides).length}개 프로젝트 동기화`);

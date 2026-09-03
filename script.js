@@ -82,6 +82,14 @@ if (typeof NOTION_OVERRIDES !== 'undefined') {
   });
 }
 
+// 노션에서 게시 미체크된 항목을 하드코딩 배열에서도 제거
+if (typeof UNPUBLISHED_SLUGS !== 'undefined' && UNPUBLISHED_SLUGS.length) {
+  const hidden = new Set(UNPUBLISHED_SLUGS);
+  for (let i = PROJECTS.length - 1; i >= 0; i--) {
+    if (hidden.has(PROJECTS[i].id)) PROJECTS.splice(i, 1);
+  }
+}
+
 const CATEGORY_LABEL = { uiux: 'Product', aivideo: 'AI Video', branding: 'Branding', article: 'Article', marketing: 'Marketing' };
 
 const TAG_CLASS = {
