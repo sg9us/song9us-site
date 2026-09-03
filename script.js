@@ -126,8 +126,8 @@ function tagsHTML(tags) {
   return tags.map(t => `<span class="tag ${TAG_CLASS[t] || 'tag-side'}">${t}</span>`).join('');
 }
 
-// ===== 홈 카드 =====
-function homeCard(p, eager = false) {
+// ===== 소형 카드 (project-card): linkBehavior=true 시 링크→새 탭, 없으면 라이트박스 =====
+function homeCard(p, { eager = false, linkBehavior = false } = {}) {
   const card = document.createElement('div');
   card.className = 'project-card';
   card.innerHTML = `
@@ -137,22 +137,28 @@ function homeCard(p, eager = false) {
       <div class="card-tags">${tagsHTML(p.tags)}</div>
       ${p.period ? `<p class="project-period">${p.period}</p>` : ''}
     </div>`;
-  card.addEventListener('click', () => openLightbox(p.id));
+  card.addEventListener('click', () => {
+    if (linkBehavior && p.link) window.open(p.link, '_blank', 'noopener,noreferrer');
+    else openLightbox(p.id);
+  });
   return card;
 }
 
-// ===== UI/UX 카테고리 카드 (2열 큰 그리드) =====
-function bigCard(p) {
+// ===== 대형 카드 (big-card, 2열 그리드): linkBehavior=true 시 링크→새 탭, 없으면 라이트박스 =====
+function bigCard(p, { eager = false, linkBehavior = false } = {}) {
   const card = document.createElement('div');
   card.className = 'big-card';
   card.innerHTML = `
-    <div class="big-thumb">${thumbHTML(p, { w: '16', h: '9' })}</div>
+    <div class="big-thumb">${thumbHTML(p, { eager, w: '16', h: '9' })}</div>
     <div class="big-info">
       <h3 class="big-name">${p.title}</h3>
       <div class="card-tags">${tagsHTML(p.tags)}</div>
       ${p.period ? `<p class="project-period">${p.period}</p>` : ''}
     </div>`;
-  card.addEventListener('click', () => openLightbox(p.id));
+  card.addEventListener('click', () => {
+    if (linkBehavior && p.link) window.open(p.link, '_blank', 'noopener,noreferrer');
+    else openLightbox(p.id);
+  });
   return card;
 }
 
@@ -212,42 +218,6 @@ function avCard(p, eager = false) {
   return card;
 }
 
-// ===== Article 카드: homeCard와 동일 비주얼, 클릭 시 링크 → 새 탭 / 없으면 라이트박스 =====
-function articleCard(p, eager = false) {
-  const card = document.createElement('div');
-  card.className = 'project-card';
-  card.innerHTML = `
-    <div class="project-thumb">${thumbHTML(p, { eager })}</div>
-    <div class="project-info">
-      <h3 class="project-name">${p.title}</h3>
-      <div class="card-tags">${tagsHTML(p.tags)}</div>
-      ${p.period ? `<p class="project-period">${p.period}</p>` : ''}
-    </div>`;
-  card.addEventListener('click', () => {
-    if (p.link) window.open(p.link, '_blank', 'noopener,noreferrer');
-    else openLightbox(p.id);
-  });
-  return card;
-}
-
-// ===== Marketing 카드: bigCard 레이아웃 + 링크 → 새 탭 / 없으면 라이트박스 =====
-function marketingBigCard(p) {
-  const card = document.createElement('div');
-  card.className = 'big-card';
-  card.innerHTML = `
-    <div class="big-thumb">${thumbHTML(p, { w: '16', h: '9' })}</div>
-    <div class="big-info">
-      <h3 class="big-name">${p.title}</h3>
-      <div class="card-tags">${tagsHTML(p.tags)}</div>
-      ${p.period ? `<p class="project-period">${p.period}</p>` : ''}
-    </div>`;
-  card.addEventListener('click', () => {
-    if (p.link) window.open(p.link, '_blank', 'noopener,noreferrer');
-    else openLightbox(p.id);
-  });
-  return card;
-}
-
 // ===== Branding 카드 (1:1) =====
 function brandingCard(p) {
   const card = document.createElement('div');
@@ -295,7 +265,7 @@ function renderHome() {
   setCount('titleMarketing', 'Marketing', mkList.length);
 
   // UI/UX: 첫 번째 카드는 eager 로딩(뷰포트 최초 노출)
-  uiList.slice(0, 4).forEach((p, i) => ui.appendChild(homeCard(p, i === 0)));
+  uiList.slice(0, 4).forEach((p, i) => ui.appendChild(homeCard(p, { eager: i === 0 })));
 
   // AI Video: 9:16 행(6열) 먼저, 16:9 행(4열)
   av.className = 'av-sections';
@@ -316,11 +286,11 @@ function renderHome() {
   br.className = 'branding-grid';
   brList.slice(0, 6).forEach(p => br.appendChild(brandingCard(p)));
 
-  // Article: articleCard 재사용 (링크 있으면 새 탭, 없으면 라이트박스)
-  arList.slice(0, 4).forEach(p => ar.appendChild(articleCard(p)));
+  // Article: 링크 있으면 새 탭, 없으면 라이트박스 / 첫 카드 eager
+  arList.slice(0, 4).forEach((p, i) => ar.appendChild(homeCard(p, { eager: i === 0, linkBehavior: true })));
 
-  // Marketing: articleCard 비주얼 재사용 (링크 있으면 새 탭, 없으면 라이트박스)
-  mkList.slice(0, 4).forEach(p => mk.appendChild(articleCard(p)));
+  // Marketing: 링크 있으면 새 탭, 없으면 라이트박스 / 첫 카드 eager
+  mkList.slice(0, 4).forEach((p, i) => mk.appendChild(homeCard(p, { eager: i === 0, linkBehavior: true })));
 
   observeFadeIn(document.getElementById('view-home'));
 }
@@ -358,13 +328,13 @@ function renderCategory(category) {
     list.forEach(p => grid.appendChild(brandingCard(p)));
   } else if (category === 'article') {
     grid.className = 'article-grid';
-    list.forEach(p => grid.appendChild(articleCard(p)));
+    list.forEach((p, i) => grid.appendChild(homeCard(p, { eager: i === 0, linkBehavior: true })));
   } else if (category === 'marketing') {
     grid.className = 'big-grid';
-    list.forEach(p => grid.appendChild(marketingBigCard(p)));
+    list.forEach((p, i) => grid.appendChild(bigCard(p, { eager: i === 0, linkBehavior: true })));
   } else {
     grid.className = 'big-grid';
-    list.forEach(p => grid.appendChild(bigCard(p)));
+    list.forEach((p, i) => grid.appendChild(bigCard(p, { eager: i === 0 })));
   }
 
   observeFadeIn(document.getElementById('view-category'));

@@ -266,7 +266,7 @@ async function main() {
     slugsSeen.add(slug);
 
     const tags = (props['태그']?.multi_select || []).map(t => t.name);
-    const period = formatPeriod(props['\b기간']?.date);
+    const period = formatPeriod(props['기간']?.date);
     const link = props['링크 URL']?.url || null;
 
     let images = [];
@@ -293,7 +293,7 @@ async function main() {
           }
         }
       } else {
-        // UIUX / Branding / Article: 페이지 내 모든 이미지를 슬라이드로 저장
+        // UIUX / Branding / Article / Marketing: 페이지 내 모든 이미지를 슬라이드로 저장
         const imageUrls = await findAllImageUrls(row.id);
         if (imageUrls.length) {
           images = await saveImages(slug, imageUrls, category);
