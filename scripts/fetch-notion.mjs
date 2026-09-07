@@ -19,6 +19,7 @@ const ROOT = path.resolve(import.meta.dirname, '..');
 // 이 목록에 있는 프로젝트는 제목이 바뀌어도 slug가 유지된다.
 const LEGACY_SLUGS = {
   '500만명의 학생을 위한 500만개의 AI 교과서, 러니파이': 'learnify',
+  '500만명의 학생을 위한 AI 교과서, 러니파이': 'learnify',
   '약 700명 동아리 회원들의 연결을 목표로 앱 리텐션 증가': 'retention',
   '약 700명 동아리 회원들의 연결을 목표로 앱 리텐션 증가, 콕 찌르기': 'retention',
   '과외관리의 표준, 튜티스 Tutice': 'tutice',
@@ -249,7 +250,7 @@ async function main() {
     // category select 먼저 확인 — 매핑 불가 시 스킵
     const categoryVal = props['category']?.select?.name || '';
     let category, subtype = null;
-    if (categoryVal === 'Product')             { category = 'uiux'; }
+    if (categoryVal === 'Product' || categoryVal === 'UXUI') { category = 'uiux'; }
     else if (categoryVal === 'AI Video 16:9') { category = 'aivideo'; subtype = '16:9'; }
     else if (categoryVal === 'AI Video 9:16') { category = 'aivideo'; subtype = '9:16'; }
     else if (categoryVal === 'Branding')      { category = 'branding'; }
